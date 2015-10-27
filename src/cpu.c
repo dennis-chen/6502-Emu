@@ -73,6 +73,15 @@ void setFlag(CPU *c, FLAG name, int val){
     setRegBit(c, STATUS, name, val);
 }
 
+/* OP CODE FUNCTIONS HERE */
+
+/*
+void ADC(CPU *c){
+    //implementation for ADC here. Note that function name should match Op code
+    //name
+}
+*/
+
 int main ()
 {
     CPU *c = getCPU();
