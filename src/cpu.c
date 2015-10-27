@@ -12,6 +12,7 @@ typedef struct {
     //CPU registers
     int16_t PC;
     int8_t *regs;
+    int8_t *addressSpace;
 } CPU;
 
 /* sets a single bit of one of the eight bit 
@@ -33,6 +34,9 @@ CPU * getCPU(){
     int NUM_REG = 5;
     int8_t *r = malloc(sizeof(int8_t)*NUM_REG);
     c-> regs = r;
+    int ADDR_SPACE_SIZE = 1; //TODO: change to actual size lol
+    int8_t *a= malloc(sizeof(int8_t)*NUM_REG);
+    c-> addressSpace = a;
     //set bit 5 of status register to 1
     //to match specifications
     setRegBit(c, STATUS, 5, 1);
@@ -73,12 +77,34 @@ void setFlag(CPU *c, FLAG name, int val){
     setRegBit(c, STATUS, name, val);
 }
 
-/* OP CODE FUNCTIONS HERE */
+typedef enum {
+    Immediate,
+    Absolute,
+    ZeroPageAbsolute,
+    Implied,
+    Accumulator,
+    Indexed,
+    ZeroPageIndexed,
+    Indirect,
+    PreIndexedIndirect,
+    PostIndexedIndirect,
+    Relative
+} MODE;
+
+typedef struct {
+    //holds information that op codes
+    //need to execute
+    int16_t address;
+    int16_t PC;
+    MODE mode;
+} OP_CODE_INFO;
+
+/* OP CODE IMPLEMENTATIONS HERE */
 
 /*
-void ADC(CPU *c){
-    //implementation for ADC here. Note that function name should match Op code
-    //name
+void ADC(CPU *c, OP_CODE_INFO *o){
+    //implementation for ADC here. Note that function name 
+    //should match Op code name
 }
 */
 
