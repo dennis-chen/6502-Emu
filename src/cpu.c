@@ -121,15 +121,18 @@ int8_t read(CPU *c, int16_t addr){
 
 /* FLAG REG OPERATIONS */
 
-//flag reg operations take 16 bit vals
-//because adding 8 bit vals can produce
-//16 bit results
-
 void setCarry(CPU *c, int16_t val){
     //sets carry flag if
     //val > 0b11111111, largest
     //eight bit val
     int8_t carry = val > 0xFF ? 1 : 0;
+    setFlag(c,V,carry);
+}
+
+void setCarryBCD(CPU *c, int16_t val){
+    //sets carry flag if
+    //val > 0x99, for addition in BCD mode
+    int8_t carry = val > 0x99 ? 1 : 0;
     setFlag(c,V,carry);
 }
 
@@ -164,15 +167,30 @@ void ADC(CPU *c, OP_CODE_INFO *o){
     int8_t carry = getFlag(c,C);
     int8_t accum = getRegByte(c,ACCUM);
     int8_t addrVal = read(c,o->address);
-    if(getFlag(c,D)){ //if in decimal mode
-        //TODO: implement this
-    } else {
-        int16_t sum = carry + accum + addrVal;
-        setZero(c,sum);
-        setCarry(c,sum);
-        setOverflow(c,accum,addrVal,sum);
+    int16_t sum = carry + accum + addrVal;
+    setZero(c,sum);
+    if(getFlag(c,D)){ //in decimal mode
+        //if lower 4 bits of operands plus
+        //the carry in are larger than 9,
+        //then we need to apply conversions
+        //to remain in binary coded decimal format.
+        if((accum & 0xF) + (addrVal & 0xF)
+            + carry > 9){
+            sum += 6;
+        }
         setSign(c,sum);
+        setOverflow(c,accum,addrVal,sum);
+        //if the higher bits aren't in
+        //BCD format we need to add 96 to convert.
+        //Black magic from http://nesdev.com/6502.txt
+        sum += sum > 0x99 ? 96 : 0;
+        setCarryBCD(c, sum);
+    } else {
+        setSign(c,sum);
+        setOverflow(c,accum,addrVal,sum);
+        setCarry(c,sum);
     }
+    setRegByte(c,sum);
 }
 
 /*
