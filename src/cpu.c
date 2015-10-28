@@ -190,7 +190,7 @@ void ADC(CPU *c, OP_CODE_INFO *o){
         setOverflow(c,accum,addrVal,sum);
         setCarry(c,sum);
     }
-    setRegByte(c,sum);
+    setRegByte(c,ACCUM,sum);
 }
 
 /*
