@@ -119,6 +119,10 @@ int8_t read(CPU *c, int16_t addr){
     return placeholder;
 }
 
+void write(CPU *c, int16_t addr, int8_t val){
+    c->addressSpace[addr] = val;
+}
+
 /* FLAG REG OPERATIONS */
 
 void setCarry(CPU *c, int16_t val){
@@ -136,7 +140,7 @@ void setCarryBCD(CPU *c, int16_t val){
     setFlag(c,V,carry);
 }
 
-void setOverflow(CPU *c, int8_t a, int8_t b, int16_t val){
+void setOverflow(CPU *c, int8_t a, int8_t b, int8_t val){
     //sets overflow if overflow in twos complement 
     //occurred when adding a and b to get val
     //this bit twiddling from:
@@ -147,14 +151,14 @@ void setOverflow(CPU *c, int8_t a, int8_t b, int16_t val){
     setFlag(c,V,overflow);
 }
 
-void setSign(CPU *c, int16_t val){
+void setSign(CPU *c, int8_t val){
     //sets sign flag equal to sign
     //of bit 7 of val
     int8_t sign = val & 0x80? 1 : 0;
     setFlag(c,S,sign);
 }
 
-void setZero(CPU *c, int16_t val){
+void setZero(CPU *c, int8_t val){
     //sets zero flag to 0 if val == 0
     //and zero flag to 1 otherwise
     int8_t isZero = val? 1 : 0 ;
@@ -163,6 +167,7 @@ void setZero(CPU *c, int16_t val){
 
 /* OP CODE IMPLEMENTATIONS HERE */
 
+//Add with carry
 void ADC(CPU *c, OP_CODE_INFO *o){
     int8_t carry = getFlag(c,C);
     int8_t accum = getRegByte(c,ACCUM);
@@ -193,22 +198,52 @@ void ADC(CPU *c, OP_CODE_INFO *o){
     setRegByte(c,ACCUM,sum);
 }
 
-/*
 void AND(CPU *c, OP_CODE_INFO *o){
+    int8_t accum = getRegByte(c,ACCUM);
+    int8_t addrVal = read(c,o->address);
+    int8_t res = accum & addrVal;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c,ACCUM,res);
 }
 
+//Arithmetic shift left
 void ASL(CPU *c, OP_CODE_INFO *o){
+    int8_t addrVal = read(c,o->address);
+    int16_t res = addrVal << 1;
+    setCarry(c,res);
+    setSign(c,res);
+    setZero(c,res);
+    if(o->mode == Accumulator){
+        setRegByte(c,ACCUM,res);
+    } else {
+        write(c,o->address,res);
+    }
 }
 
+//Branch if carry clear
 void BCC(CPU *c, OP_CODE_INFO *o){
+    if(!getFlag(c,C)){
+        c->PC = o->address;
+        //TODO: cpu add branch cycles here
+    }
 }
 
+//Branch if carry set
 void BCS(CPU *c, OP_CODE_INFO *o){
+    if(getFlag(c,C)){
+        c->PC = o->address;
+        //TODO: cpu add branch cycles here
+    }
 }
 
+//Branch if equals
 void BEQ(CPU *c, OP_CODE_INFO *o){
+    if(getFlag(c,Z)){
+        c->PC = o->address;
+        //TODO: cpu add branch cycles here
+    }
 }
-*/
 
 int main ()
 {
