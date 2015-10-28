@@ -210,6 +210,10 @@ void BEQ(CPU *c, OP_CODE_INFO *o){
 }
 */
 
+void BVS(CPU *c, OP_CODE_INFO *o){
+    if (getFlag(c, V))
+}
+
 int main ()
 {
     CPU *c = getCPU();
