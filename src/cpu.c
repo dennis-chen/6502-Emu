@@ -34,8 +34,9 @@ CPU * getCPU(){
     int NUM_REG = 5;
     int8_t *r = malloc(sizeof(int8_t)*NUM_REG);
     c-> regs = r;
-    int ADDR_SPACE_SIZE = 1; //TODO: change to actual size lol
-    int8_t *a= malloc(sizeof(int8_t)*NUM_REG);
+    //initialize address space
+    int ADDR_SPACE_SIZE = 65536;
+    int8_t *a= malloc(sizeof(int8_t)*ADDR_SPACE_SIZE);
     c-> addressSpace = a;
     //set bit 5 of status register to 1
     //to match specifications
@@ -65,6 +66,10 @@ void setRegByte(CPU *c, REG name, int8_t val){
     c->regs[name] = val;
 }
 
+int8_t getRegByte(CPU *c, REG name){
+    return c->regs[name];
+}
+
 typedef enum {
     //enums specifying flag bits of the status register
     C, Z, I, D, B, NOT_USED_FLAG, V, S
@@ -75,6 +80,14 @@ void setFlag(CPU *c, FLAG name, int val){
     //and should always be 1
     assert(name != NOT_USED_FLAG);
     setRegBit(c, STATUS, name, val);
+}
+
+int8_t getFlag(CPU *c, FLAG name){
+    //bit 5 of the status register is not to be set
+    //and should always be 1
+    assert(name != NOT_USED_FLAG);
+    int8_t flag =  c->regs[STATUS] & (1 << name) ? 1 : 0;
+    return flag;
 }
 
 typedef enum {
@@ -99,12 +112,83 @@ typedef struct {
     MODE mode;
 } OP_CODE_INFO;
 
+int8_t read(CPU *c, int16_t addr){
+    //placeholder code 
+    //TODO: replace this w/ actual implementation
+    int8_t placeholder = c->addressSpace[addr];
+    return placeholder;
+}
+
+/* FLAG REG OPERATIONS */
+
+//flag reg operations take 16 bit vals
+//because adding 8 bit vals can produce
+//16 bit results
+
+void setCarry(CPU *c, int16_t val){
+    //sets carry flag if
+    //val > 0b11111111, largest
+    //eight bit val
+    int8_t carry = val > 0xFF ? 1 : 0;
+    setFlag(c,V,carry);
+}
+
+void setOverflow(CPU *c, int8_t a, int8_t b, int16_t val){
+    //sets overflow if overflow in twos complement 
+    //occurred when adding a and b to get val
+    //this bit twiddling from:
+    //http://nesdev.com/6502.txt
+    int8_t overflow = !((a ^ b) & 0x80) && ((a ^ val) & 0x80);
+    //overflow = signs of operands are the same AND
+    //          sign of result not equal to sign of operands
+    setFlag(c,V,overflow);
+}
+
+void setSign(CPU *c, int16_t val){
+    //sets sign flag equal to sign
+    //of bit 7 of val
+    int8_t sign = val & 0x80? 1 : 0;
+    setFlag(c,S,sign);
+}
+
+void setZero(CPU *c, int16_t val){
+    //sets zero flag to 0 if val == 0
+    //and zero flag to 1 otherwise
+    int8_t isZero = val? 1 : 0 ;
+    setFlag(c,Z,isZero);
+}
+
 /* OP CODE IMPLEMENTATIONS HERE */
 
-/*
 void ADC(CPU *c, OP_CODE_INFO *o){
-    //implementation for ADC here. Note that function name 
-    //should match Op code name
+    int8_t carry = getFlag(c,C);
+    int8_t accum = getRegByte(c,ACCUM);
+    int8_t addrVal = read(c,o->address);
+    if(getFlag(c,D)){ //if in decimal mode
+        //TODO: implement this
+    } else {
+        int16_t sum = carry + accum + addrVal;
+        setZero(c,sum);
+        setCarry(c,sum);
+        setOverflow(c,accum,addrVal,sum);
+        setSign(c,sum);
+    }
+}
+
+/*
+void AND(CPU *c, OP_CODE_INFO *o){
+}
+
+void ASL(CPU *c, OP_CODE_INFO *o){
+}
+
+void BCC(CPU *c, OP_CODE_INFO *o){
+}
+
+void BCS(CPU *c, OP_CODE_INFO *o){
+}
+
+void BEQ(CPU *c, OP_CODE_INFO *o){
 }
 */
 
