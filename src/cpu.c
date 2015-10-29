@@ -245,6 +245,7 @@ void BEQ(CPU *c, OP_CODE_INFO *o){
     }
 }
 
+//Branch on overflow set
 void BVS(CPU *c, OP_CODE_INFO *o){
     if (getFlag(c, V)){
         c->PC = o->address;
@@ -252,22 +253,27 @@ void BVS(CPU *c, OP_CODE_INFO *o){
     }
 }
 
+//Clear carry flag
 void CLC(CPU *c, OP_CODE_INFO *o){
     setFlag(c, C, 0);
 }
 
+//Clear decimal mode
 void CLD(CPU *c, OP_CODE_INFO *o){
     setFlag(c, D, 0);
 }
 
+//Clear interrupt disable bit
 void CLI(CPU *c, OP_CODE_INFO *o){
     setFlag(c, I, 0);
 }
 
+//Clear overflow flag
 void CLV(CPU *c, OP_CODE_INFO *o){
     setFlag(c, V, 0);
 }
 
+//Compare memory and accumulator
 void CMP(CPU *c, OP_CODE_INFO *o){
     int8_t src = getRegByte(c, ACCUM) - o->address;
     setFlag(c, C, src < 0x100);
@@ -275,6 +281,7 @@ void CMP(CPU *c, OP_CODE_INFO *o){
     setFlag(c, Z, (src &= 0xff));
 }
 
+//Compare memory and index x
 void CPX(CPU *c, OP_CODE_INFO *o){
     int8_t src = getRegByte(c, IND_X) - o->address;
     setFlag(c, C, src < 0x100);
@@ -282,6 +289,7 @@ void CPX(CPU *c, OP_CODE_INFO *o){
     setFlag(c, Z, (src &= 0xff));
 }
 
+//Compare memory and index y
 void CPY(CPU *c, OP_CODE_INFO *o){
     int8_t src = getRegByte(c, IND_Y) - o->address;
     setFlag(c, C, src < 0x100);
