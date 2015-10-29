@@ -211,8 +211,49 @@ void BEQ(CPU *c, OP_CODE_INFO *o){
 */
 
 void BVS(CPU *c, OP_CODE_INFO *o){
-    if (getFlag(c, V))
+    if (getFlag(c, V)){
+        c->PC = o->address;
+        //TODO: add clk cycles here
+    }
 }
+
+void CLC(CPU *c, OP_CODE_INFO *o){
+    setFlag(c, C, 0);
+}
+
+void CLD(CPU *c, OP_CODE_INFO *o){
+    setFlag(c, D, 0);
+}
+
+void CLI(CPU *c, OP_CODE_INFO *o){
+    setFlag(c, I, 0);
+}
+
+void CLV(CPU *c, OP_CODE_INFO *o){
+    setFlag(c, V, 0);
+}
+
+void CMP(CPU *c, OP_CODE_INFO *o){
+    int8_t src = getRegByte(c, ACCUM) - o->address;
+    setFlag(c, C, src < 0x100);
+    setFlag(c, N, (src & 0x40));    // get 7th bit of src
+    setFlag(c, Z, (src &= 0xff));
+}
+
+void CPX(CPU *c, OP_CODE_INFO *o){
+    int8_t src = getRegByte(c, IND_X) - o->address;
+    setFlag(c, C, src < 0x100);
+    setFlag(c, N, (src & 0x40));    // get 7th bit of src
+    setFlag(c, Z, (src &= 0xff));
+}
+
+void CPY(CPU *c, OP_CODE_INFO *o){
+    int8_t src = getRegByte(c, IND_Y) - o->address;
+    setFlag(c, C, src < 0x100);
+    setFlag(c, N, (src & 0x40));    // get 7th bit of src
+    setFlag(c, Z, (src &= 0xff));
+}
+
 
 int main ()
 {
