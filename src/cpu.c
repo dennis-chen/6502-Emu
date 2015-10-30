@@ -72,6 +72,13 @@ int8_t getRegByte(CPU *c, REG name){
 
 typedef enum {
     //enums specifying flag bits of the status register
+    // C = carry
+    // Z = zero
+    // I = interrupt enable
+    // D = decimal mode
+    // B = enabled on BRK
+    // V = overflow
+    // S = sign
     C, Z, I, D, B, NOT_USED_FLAG, V, S
 } FLAG;
 
