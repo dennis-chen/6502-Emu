@@ -115,6 +115,7 @@ typedef struct {
     //holds information that op codes
     //need to execute
     int16_t address;
+    int16_t immediate;
     int16_t PC;
     MODE mode;
 } OP_CODE_INFO;
