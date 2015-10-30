@@ -253,7 +253,7 @@ void BIT(CPU *c, OP_CODE_INFO *o){
     // int8_t addrVal = read(c,o->address); should i be using this or src?
 
     setFlag(c, V, (src & 0x40)); // get 6th bit of src
-    setFlag(c, N, src); // get 7th bit of src
+    setFlag(c, S, src); // get 7th bit of src
     setFlag(c, Z, (src & accum));
 }
 
@@ -331,7 +331,7 @@ void CLV(CPU *c, OP_CODE_INFO *o){
 void CMP(CPU *c, OP_CODE_INFO *o){
     int8_t src = getRegByte(c, ACCUM) - o->address;
     setFlag(c, C, src < 0x100);
-    setFlag(c, N, (src & 0x40));    // get 7th bit of src
+    setFlag(c, S, (src & 0x40));    // get 7th bit of src
     setFlag(c, Z, (src &= 0xff));
 }
 
@@ -339,7 +339,7 @@ void CMP(CPU *c, OP_CODE_INFO *o){
 void CPX(CPU *c, OP_CODE_INFO *o){
     int8_t src = getRegByte(c, IND_X) - o->address;
     setFlag(c, C, src < 0x100);
-    setFlag(c, N, (src & 0x40));    // get 7th bit of src
+    setFlag(c, S, (src & 0x40));    // get 7th bit of src
     setFlag(c, Z, (src &= 0xff));
 }
 
@@ -347,7 +347,7 @@ void CPX(CPU *c, OP_CODE_INFO *o){
 void CPY(CPU *c, OP_CODE_INFO *o){
     int8_t src = getRegByte(c, IND_Y) - o->address;
     setFlag(c, C, src < 0x100);
-    setFlag(c, N, (src & 0x40));    // get 7th bit of src
+    setFlag(c, S, (src & 0x40));    // get 7th bit of src
     setFlag(c, Z, (src &= 0xff));
 }
 
