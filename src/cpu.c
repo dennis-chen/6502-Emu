@@ -245,6 +245,60 @@ void BEQ(CPU *c, OP_CODE_INFO *o){
     }
 }
 
+// Test bits in memory with accumulator
+void BIT(CPU *c, OP_CODE_INFO *o){
+
+    int8_t src = getRegByte(c, ACCUM) - o->address;
+    int8_t accum = getRegByte(c, ACCUM);
+    // int8_t addrVal = read(c,o->address); should i be using this or src?
+
+    setFlag(c, V, (src & 0x40)); // get 6th bit of src
+    setFlag(c, N, src); // get 7th bit of src
+    setFlag(c, Z, (src & accum));
+}
+
+// Branch if result minus
+void BMI(CPU *c, OP_CODE_INFO *o){
+    if (getFlag(c, S)) {
+        c->PC = o->address;
+        //TODO: cpu add branch cycles here
+    }
+}
+
+// Branch if not equals
+void BNE(CPU *c, OP_CODE_INFO *o){
+    if(!(getFlag(c,Z))){
+        c->PC = o->address;
+        //TODO: cpu add branch cycles here
+    }
+}
+
+// Branch if result plus
+void BPL(CPU *c, OP_CODE_INFO *o){
+    if(!(getFlag(c,S))){
+        c->PC = o->address;
+        //TODO: cpu add branch cycles here
+    }
+}
+
+// TODO BRK
+// Force Break
+    // PC++;
+    // PUSH((PC >> 8) & 0xff);	/* Push return address onto the stack. */
+    // PUSH(PC & 0xff);
+    // SET_BREAK((1));             /* Set BFlag before pushing */
+    // PUSH(SR);
+    // SET_INTERRUPT((1));
+    // PC = (LOAD(0xFFFE) | (LOAD(0xFFFF) << 8));
+
+// Branch if overflow clear
+void BVC(CPU *c, OP_CODE_INFO *o){
+    if (!(getFlag(c, V))){
+        c->PC = o->address;
+        //TODO: add clk cycles here
+    }
+}
+
 //Branch on overflow set
 void BVS(CPU *c, OP_CODE_INFO *o){
     if (getFlag(c, V)){
