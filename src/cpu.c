@@ -177,20 +177,20 @@ void setZero(CPU *c, int8_t val){
 void ADC(CPU *c, OP_CODE_INFO *o){
     int8_t carry = getFlag(c,C);
     int8_t accum = getRegByte(c,ACCUM);
-    int8_t addrVal = read(c,o->address);
-    int16_t sum = carry + accum + addrVal;
+    int8_t operand = o->operand;
+    int16_t sum = carry + accum + operand;
     setZero(c,sum);
     if(getFlag(c,D)){ //in decimal mode
         //if lower 4 bits of operands plus
         //the carry in are larger than 9,
         //then we need to apply conversions
         //to remain in binary coded decimal format.
-        if((accum & 0xF) + (addrVal & 0xF)
+        if((accum & 0xF) + (operand & 0xF)
             + carry > 9){
             sum += 6;
         }
         setSign(c,sum);
-        setOverflow(c,accum,addrVal,sum);
+        setOverflow(c,accum,operand,sum);
         //if the higher bits aren't in
         //BCD format we need to add 96 to convert.
         //Black magic from http://nesdev.com/6502.txt
@@ -198,7 +198,7 @@ void ADC(CPU *c, OP_CODE_INFO *o){
         setCarryBCD(c, sum);
     } else {
         setSign(c,sum);
-        setOverflow(c,accum,addrVal,sum);
+        setOverflow(c,accum,operand,sum);
         setCarry(c,sum);
     }
     setRegByte(c,ACCUM,sum);
@@ -206,8 +206,8 @@ void ADC(CPU *c, OP_CODE_INFO *o){
 
 void AND(CPU *c, OP_CODE_INFO *o){
     int8_t accum = getRegByte(c,ACCUM);
-    int8_t addrVal = read(c,o->address);
-    int8_t res = accum & addrVal;
+    int8_t operand = o->operand;
+    int8_t res = accum & operand;
     setSign(c,res);
     setZero(c,res);
     setRegByte(c,ACCUM,res);
@@ -215,8 +215,8 @@ void AND(CPU *c, OP_CODE_INFO *o){
 
 //Arithmetic shift left
 void ASL(CPU *c, OP_CODE_INFO *o){
-    int8_t addrVal = read(c,o->address);
-    int16_t res = addrVal << 1;
+    int8_t operand = o->operand;
+    int16_t res = operand << 1;
     setCarry(c,res);
     setSign(c,res);
     setZero(c,res);
@@ -230,7 +230,7 @@ void ASL(CPU *c, OP_CODE_INFO *o){
 //Branch if carry clear
 void BCC(CPU *c, OP_CODE_INFO *o){
     if(!getFlag(c,C)){
-        c->PC = o->address;
+        c->PC = o->operand;
         //TODO: cpu add branch cycles here
     }
 }
@@ -238,7 +238,7 @@ void BCC(CPU *c, OP_CODE_INFO *o){
 //Branch if carry set
 void BCS(CPU *c, OP_CODE_INFO *o){
     if(getFlag(c,C)){
-        c->PC = o->address;
+        c->PC = o->operand;
         //TODO: cpu add branch cycles here
     }
 }
@@ -246,7 +246,7 @@ void BCS(CPU *c, OP_CODE_INFO *o){
 //Branch if equals
 void BEQ(CPU *c, OP_CODE_INFO *o){
     if(getFlag(c,Z)){
-        c->PC = o->address;
+        c->PC = o->operand;
         //TODO: cpu add branch cycles here
     }
 }
