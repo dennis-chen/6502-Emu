@@ -176,7 +176,9 @@ void setZero(CPU *c, int8_t val){
 }
 
 /* STACK OPERATIONS HERE */
-void PUSH(CPU *c, OP_CODE_INFO *o, int8_t operand){
+void PUSH( __attribute__ ((unused)) CPU *c, 
+        __attribute__ ((unused)) OP_CODE_INFO *o, 
+        __attribute__ ((unused)) int8_t operand){
     //TODO: implement pushing operand onto stack
 }
 
@@ -323,22 +325,22 @@ void BVS(CPU *c, OP_CODE_INFO *o){
 }
 
 //Clear carry flag
-void CLC(CPU *c, OP_CODE_INFO *o){
+void CLC(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
     setFlag(c, C, 0);
 }
 
 //Clear decimal mode
-void CLD(CPU *c, OP_CODE_INFO *o){
+void CLD(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
     setFlag(c, D, 0);
 }
 
 //Clear interrupt disable bit
-void CLI(CPU *c, OP_CODE_INFO *o){
+void CLI(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
     setFlag(c, I, 0);
 }
 
 //Clear overflow flag
-void CLV(CPU *c, OP_CODE_INFO *o){
+void CLV(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
     setFlag(c, V, 0);
 }
 
@@ -380,7 +382,7 @@ void JSR(CPU *c, OP_CODE_INFO *o){
     //so we push the 16 bit address
     //onto the stack in two parts
     PUSH(c, o, ((c->PC)>>8) & 0xFF);
-    PUSH(c, o, PC & 0xFF);
+    PUSH(c, o, c->PC & 0xFF);
     c->PC = o->operand;
 }
 
@@ -409,9 +411,9 @@ void LDY(CPU *c, OP_CODE_INFO *o){
 void LSR(CPU *c, OP_CODE_INFO *o){
     //shift rightmost bit into carry
     setFlag(c, C, o->operand & 0x01);
-    shifted = o->operand >> 1;
-    setSign(shifted);
-    setZero(shifted);
+    int8_t shifted = o->operand >> 1;
+    setSign(c, shifted);
+    setZero(c, shifted);
     if(o->mode == Accumulator){
         setRegByte(c, ACCUM, shifted);
     } else {
