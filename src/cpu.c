@@ -114,7 +114,11 @@ typedef enum {
 typedef struct {
     //holds information that op codes
     //need to execute
-    int16_t operand;
+    int8_t operand;
+    //address that operand is fetched
+    //from is needed for operations
+    //like LSR
+    int16_t address;
     MODE mode;
 } OP_CODE_INFO;
 
@@ -169,6 +173,11 @@ void setZero(CPU *c, int8_t val){
     //and zero flag to 1 otherwise
     int8_t isZero = val? 1 : 0 ;
     setFlag(c,Z,isZero);
+}
+
+/* STACK OPERATIONS HERE */
+void PUSH(CPU *c, OP_CODE_INFO *o, int8_t operand){
+    //TODO: implement pushing operand onto stack
 }
 
 /* OP CODE IMPLEMENTATIONS HERE */
@@ -357,6 +366,58 @@ void CPY(CPU *c, OP_CODE_INFO *o){
     setFlag(c, Z, (src &= 0xff));
 }
 
+//Jump PC to 16 bit operand
+void JMP(CPU *c, OP_CODE_INFO *o){
+    c->PC = o->operand;
+}
+
+//Jump to subroutine
+void JSR(CPU *c, OP_CODE_INFO *o){
+    //decrement PC because PC will be
+    //incremented by one when it jumps back
+    c->PC--;
+    //STACK holds eight bit values
+    //so we push the 16 bit address
+    //onto the stack in two parts
+    PUSH(c, o, ((c->PC)>>8) & 0xFF);
+    PUSH(c, o, PC & 0xFF);
+    c->PC = o->operand;
+}
+
+//Load value into accumulator
+void LDA(CPU *c, OP_CODE_INFO *o){
+    setSign(c, o->operand);
+    setZero(c, o->operand);
+    setRegByte(c, ACCUM, o->operand);
+}
+
+//Load value into x reg
+void LDX(CPU *c, OP_CODE_INFO *o){
+    setSign(c, o->operand);
+    setZero(c, o->operand);
+    setRegByte(c, IND_X, o->operand);
+}
+
+//Load value into y reg
+void LDY(CPU *c, OP_CODE_INFO *o){
+    setSign(c, o->operand);
+    setZero(c, o->operand);
+    setRegByte(c, IND_Y, o->operand);
+}
+
+//Logical shift right
+void LSR(CPU *c, OP_CODE_INFO *o){
+    //shift rightmost bit into carry
+    setFlag(c, C, o->operand & 0x01);
+    shifted = o->operand >> 1;
+    setSign(shifted);
+    setZero(shifted);
+    if(o->mode == Accumulator){
+        setRegByte(c, ACCUM, shifted);
+    } else {
+        write(c, o->address, shifted);
+    }
+}
 
 int main ()
 {
