@@ -70,15 +70,17 @@ int8_t getRegByte(CPU *c, REG name){
     return c->regs[name];
 }
 
+/* In order from bit 0 to 7:
+    C: Carry flag (set for carry in addition, borrow in subtraction)
+    Z: Zero flag (set if zero)
+    I: Interrupt flag (set to disable)
+    D: Decimal mode flag (set to treat numbers as binary coded decimals in adding/subtracting)
+    B: Interrupt flag (set when a software interruption BRK is executed)
+    NOT_USED_FLAG: this is always set. seriously, don't use it.
+    V: Overflow flag (set if value too large to be represented in a byte)
+    S: Sign flag (set if negative)
+*/
 typedef enum {
-    //enums specifying flag bits of the status register
-    // C = carry
-    // Z = zero
-    // I = interrupt enable
-    // D = decimal mode
-    // B = enabled on BRK
-    // V = overflow
-    // S = sign
     C, Z, I, D, B, NOT_USED_FLAG, V, S
 } FLAG;
 
@@ -265,9 +267,8 @@ void BEQ(CPU *c, OP_CODE_INFO *o){
 // Test bits in memory with accumulator
 void BIT(CPU *c, OP_CODE_INFO *o){
 
-    int8_t src = getRegByte(c, ACCUM) - o->address;
+    int8_t src = o->operand;
     int8_t accum = getRegByte(c, ACCUM);
-    // int8_t addrVal = read(c,o->address); should i be using this or src?
 
     setFlag(c, V, (src & 0x40)); // get 6th bit of src
     setFlag(c, S, src); // get 7th bit of src
@@ -277,7 +278,7 @@ void BIT(CPU *c, OP_CODE_INFO *o){
 // Branch if result minus
 void BMI(CPU *c, OP_CODE_INFO *o){
     if (getFlag(c, S)) {
-        c->PC = o->address;
+        c->PC = o->operand;
         //TODO: cpu add branch cycles here
     }
 }
@@ -285,7 +286,7 @@ void BMI(CPU *c, OP_CODE_INFO *o){
 // Branch if not equals
 void BNE(CPU *c, OP_CODE_INFO *o){
     if(!(getFlag(c,Z))){
-        c->PC = o->address;
+        c->PC = o->operand;
         //TODO: cpu add branch cycles here
     }
 }
@@ -293,20 +294,22 @@ void BNE(CPU *c, OP_CODE_INFO *o){
 // Branch if result plus
 void BPL(CPU *c, OP_CODE_INFO *o){
     if(!(getFlag(c,S))){
-        c->PC = o->address;
+        c->PC = o->operand;
         //TODO: cpu add branch cycles here
     }
 }
 
 // TODO BRK
 // Force Break
-    // PC++;
-    // PUSH((PC >> 8) & 0xff);	/* Push return address onto the stack. */
-    // PUSH(PC & 0xff);
-    // SET_BREAK((1));             /* Set BFlag before pushing */
-    // PUSH(SR);
-    // SET_INTERRUPT((1));
-    // PC = (LOAD(0xFFFE) | (LOAD(0xFFFF) << 8));
+void BRK(CPU *c, OP_CODE_INFO *o){
+    (c->PC)++; // this could be between 0 and 3.
+    PUSH(c, o, (c->PC >> 8) & 0xff); // Push return address onto the stack.
+    PUSH(c, o, c->PC & 0xff); // (push Program Counter AND 0xFF)
+    setFlag(c, B, 1);
+    PUSH(c, o, getRegByte(c, STATUS)); // (push status register onto top of stack)
+    setFlag(c, D, 1);
+    // PC = (LOAD(0xFFFE) | (LOAD(0xFFFF) << 8)); change PC
+}
 
 // Branch if overflow clear
 void BVC(CPU *c, OP_CODE_INFO *o){
@@ -419,6 +422,37 @@ void LSR(CPU *c, OP_CODE_INFO *o){
     } else {
         write(c, o->address, shifted);
     }
+}
+
+// No operation
+void NOP(CPU *c, OP_CODE_INFO *o){}
+
+// OR memory with accumulator
+void ORA(CPU *c, OP_CODE_INFO *o){
+    int8_t src = o->operand | getRegByte(c, ACCUM);
+    setFlag(c, Z, src);
+    setFlag(c, S, src);
+    setRegByte(c, ACCUM, src);
+}
+
+// Push accumulator onto stack
+void PHA(CPU *c, OP_CODE_INFO *o){
+    PUSH(c, o, getRegByte(c, ACCUM));
+}
+
+// Push status register onto stack
+void PHP(CPU *c, OP_CODE_INFO *o){
+    PUSH(c, o, getRegByte(c, STATUS));
+}
+
+// Pull accumulator from stack
+void PLA(CPU *c, OP_CODE_INFO *o){
+    // setRegByte(c, ACCUM, PULL(c));
+}
+
+// Pull status register from stack
+void PLP(CPU *c, OP_CODE_INFO *o){
+    // setRegByte(c, STATUS, PULL(c));
 }
 
 int main ()
