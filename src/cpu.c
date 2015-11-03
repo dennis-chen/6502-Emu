@@ -81,14 +81,6 @@ int8_t getRegByte(CPU *c, REG name){
     S: Sign flag (set if negative)
 */
 typedef enum {
-    //enums specifying flag bits of the status register
-    // C = carry
-    // Z = zero
-    // I = interrupt enable
-    // D = decimal mode
-    // B = enabled on BRK
-    // V = overflow
-    // S = sign
     C, Z, I, D, B, NOT_USED_FLAG, V, S
 } FLAG;
 
@@ -310,14 +302,15 @@ void BPL(CPU *c, OP_CODE_INFO *o){
 // TODO BRK
 // Force Break
 void BRK(CPU *c, OP_CODE_INFO *o){
-    (c->PC)++;
-    // PUSH((PC >> 8) & 0xff);	/* Push return address onto the stack. */
-    // PUSH(PC & 0xff); (push Program Counter logical AND 0xFF)
+    (c->PC)++; // this could be between 0 and 3.
+    PUSH(c, o, (c->PC >> 8) & 0xff); // Push return address onto the stack.
+    PUSH(c, o, c->PC & 0xff); // (push Program Counter AND 0xFF)
     setFlag(c, B, 1);
-    // PUSH(SR); (push status register bit onto top of stack)
+    PUSH(c, o, getRegByte(c, STATUS)); // (push status register onto top of stack)
     setFlag(c, D, 1);
     // PC = (LOAD(0xFFFE) | (LOAD(0xFFFF) << 8)); change PC
-    
+}
+
 // Branch if overflow clear
 void BVC(CPU *c, OP_CODE_INFO *o){
     if (!(getFlag(c, V))){
@@ -444,21 +437,23 @@ void ORA(CPU *c, OP_CODE_INFO *o){
 
 // Push accumulator onto stack
 void PHA(CPU *c, OP_CODE_INFO *o){
-    // TODO: push getRegByte(c, ACCUM) onto stack
-    // (how are we putting stuff on the stack?)
-    // remember to adjust the stack pointer?
+    PUSH(c, o, getRegByte(c, ACCUM));
 }
 
 // Push status register onto stack
 void PHP(CPU *c, OP_CODE_INFO *o){
-    // TODO: push getRegByte(c, STATUS) onto stack
+    PUSH(c, o, getRegByte(c, STATUS));
 }
 
 // Pull accumulator from stack
-void PLA(CPU *c, OP_CODE_INFO *o){}
+void PLA(CPU *c, OP_CODE_INFO *o){
+    // setRegByte(c, ACCUM, PULL(c));
+}
 
 // Pull status register from stack
-void PLP(CPU *c, OP_CODE_INFO *o){}
+void PLP(CPU *c, OP_CODE_INFO *o){
+    // setRegByte(c, STATUS, PULL(c));
+}
 
 int main ()
 {
