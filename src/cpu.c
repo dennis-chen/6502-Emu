@@ -1,19 +1,16 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "cpu.h"
 
-typedef enum {
+enum reg {
     //enums for 8 bit registers
     STATUS, STACK, ACCUM, IND_X, IND_Y
-} REG;
+};
 
-typedef struct {
+struct cpu {
     //CPU registers
     int16_t PC;
     int8_t *regs;
     int8_t *addressSpace;
-} CPU;
+}; 
 
 /* sets a single bit of one of the eight bit 
  * registers on CPU to val */
@@ -70,7 +67,7 @@ int8_t getRegByte(CPU *c, REG name){
     return c->regs[name];
 }
 
-typedef enum {
+enum flag {
     //enums specifying flag bits of the status register
     // C = carry
     // Z = zero
@@ -80,7 +77,7 @@ typedef enum {
     // V = overflow
     // S = sign
     C, Z, I, D, B, NOT_USED_FLAG, V, S
-} FLAG;
+};
 
 void setFlag(CPU *c, FLAG name, int val){
     //bit 5 of the status register is not to be set
@@ -111,7 +108,7 @@ typedef enum {
     Relative
 } MODE;
 
-typedef struct {
+struct op_code_info {
     //holds information that op codes
     //need to execute
     int8_t operand;
@@ -120,7 +117,7 @@ typedef struct {
     //like LSR
     int16_t address;
     MODE mode;
-} OP_CODE_INFO;
+};
 
 int8_t read(CPU *c, int16_t addr){
     //placeholder code 
