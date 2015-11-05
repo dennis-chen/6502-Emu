@@ -1,17 +1,5 @@
 #include "cpu.h"
 
-enum reg {
-    //enums for 8 bit registers
-    STATUS, STACK, ACCUM, IND_X, IND_Y
-};
-
-struct cpu {
-    //CPU registers
-    int16_t PC;
-    int8_t *regs;
-    int8_t *addressSpace;
-}; 
-
 /* sets a single bit of one of the eight bit 
  * registers on CPU to val */
 void setRegBit(CPU *c, REG name, int8_t bit, int8_t val){
@@ -67,18 +55,6 @@ int8_t getRegByte(CPU *c, REG name){
     return c->regs[name];
 }
 
-enum flag {
-    //enums specifying flag bits of the status register
-    // C = carry
-    // Z = zero
-    // I = interrupt enable
-    // D = decimal mode
-    // B = enabled on BRK
-    // V = overflow
-    // S = sign
-    C, Z, I, D, B, NOT_USED_FLAG, V, S
-};
-
 void setFlag(CPU *c, FLAG name, int val){
     //bit 5 of the status register is not to be set
     //and should always be 1
@@ -93,31 +69,6 @@ int8_t getFlag(CPU *c, FLAG name){
     int8_t flag =  c->regs[STATUS] & (1 << name) ? 1 : 0;
     return flag;
 }
-
-typedef enum {
-    Immediate,
-    Absolute,
-    ZeroPageAbsolute,
-    Implied,
-    Accumulator,
-    Indexed,
-    ZeroPageIndexed,
-    Indirect,
-    PreIndexedIndirect,
-    PostIndexedIndirect,
-    Relative
-} MODE;
-
-struct op_code_info {
-    //holds information that op codes
-    //need to execute
-    int8_t operand;
-    //address that operand is fetched
-    //from is needed for operations
-    //like LSR
-    int16_t address;
-    MODE mode;
-};
 
 int8_t read(CPU *c, int16_t addr){
     //placeholder code 
@@ -418,9 +369,11 @@ void LSR(CPU *c, OP_CODE_INFO *o){
     }
 }
 
+/*
 int main ()
 {
     CPU *c = getCPU();
     print(c);
     return 0;
 }
+*/

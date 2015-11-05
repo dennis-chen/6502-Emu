@@ -1,0 +1,15 @@
+|- bin //contains all object files and executables. makefiles should create those
+|       objects here.
+| 
+|- src //contains all emulator .c and .h files
+| 
+|- tests //contains all test .c and .h files
+| 
+|- tools
+    |- makeheaders.c //tool for auto generating header files from a c file
+    |- Makefile //contains all make information
+
+______________________________________________________________________________
+
+
+

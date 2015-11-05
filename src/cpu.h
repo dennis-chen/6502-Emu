@@ -3,10 +3,54 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct cpu CPU;
-typedef enum reg REG;
-typedef enum flag FLAG;
-typedef struct op_code_info OP_CODE_INFO;
+typedef enum reg {
+    //enums for 8 bit registers
+    STATUS, STACK, ACCUM, IND_X, IND_Y
+} REG;
+
+typedef struct cpu {
+    //CPU registers
+    int16_t PC;
+    int8_t *regs;
+    int8_t *addressSpace;
+} CPU; 
+
+typedef enum mode {
+    Immediate,
+    Absolute,
+    ZeroPageAbsolute,
+    Implied,
+    Accumulator,
+    Indexed,
+    ZeroPageIndexed,
+    Indirect,
+    PreIndexedIndirect,
+    PostIndexedIndirect,
+    Relative
+} MODE;
+
+typedef struct op_code_info {
+    //holds information that op codes
+    //need to execute
+    int8_t operand;
+    //address that operand is fetched
+    //from is needed for operations
+    //like LSR
+    int16_t address;
+    MODE mode;
+} OP_CODE_INFO;
+
+typedef enum flag {
+    //enums specifying flag bits of the status register
+    // C = carry
+    // Z = zero
+    // I = interrupt enable
+    // D = decimal mode
+    // B = enabled on BRK
+    // V = overflow
+    // S = sign
+    C, Z, I, D, B, NOT_USED_FLAG, V, S
+} FLAG;
 
 int main();
 void LSR(CPU *c,OP_CODE_INFO *o);

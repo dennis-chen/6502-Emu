@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "minunit.h"
 #include "../src/cpu.h"
 
@@ -13,6 +12,8 @@ static char * test_foo() {
 }
 
 static char * test_bar() {
+    CPU *c = getCPU();
+    print(c);
     mu_assert("error, bar != 5", bar == 5);
     return 0;
 }
