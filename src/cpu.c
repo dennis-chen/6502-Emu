@@ -123,6 +123,14 @@ void setZero(CPU *c, int8_t val){
     setFlag(c,Z,isZero);
 }
 
+OP_CODE_INFO * getOP_CODE_INFO(int8_t operand, int16_t address, MODE mode){
+    OP_CODE_INFO *o = malloc(sizeof(OP_CODE_INFO));
+    o->operand = operand;
+    o->address = address;
+    o->mode = mode;
+    return o;
+}
+
 /* STACK OPERATIONS HERE */
 void PUSH( __attribute__ ((unused)) CPU *c, 
         __attribute__ ((unused)) OP_CODE_INFO *o, 

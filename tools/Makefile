@@ -4,3 +4,5 @@
 	gcc -c ../tests/testCPU.c -o ../bin/testCPU.o
 ../bin/testCPU: ../bin/cpu.o ../bin/testCPU.o
 	gcc ../bin/cpu.o ../bin/testCPU.o  -o ../bin/testCPU
+
+all: ../bin/testCPU

@@ -92,4 +92,5 @@ int8_t getRegByte(CPU *c,REG name);
 void setRegByte(CPU *c,REG name,int8_t val);
 void print(CPU *c);
 CPU *getCPU();
+OP_CODE_INFO *getOP_CODE_INFO(int8_t operand, int16_t address, MODE mode);
 void setRegBit(CPU *c,REG name,int8_t bit,int8_t val);
