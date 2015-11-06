@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include "opcodes.h"
 
+unsigned int get_hex_from_chars(char *c) {
+    //
+    if (c[0]-'0' >= '0' && c[0]-'0' =< '9') {
+        c[0]-'0'
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         printf("Error: expecting command line argument with hex dump file to be opened.\n");
@@ -19,17 +25,51 @@ int main(int argc, char **argv) {
     }
 
     unsigned int pc, hex_val;
-    fscanf(hex, "%x: ", &hex_val);
-    pc = hex_val;
 
-    //while (hex_val != EOF) {
-    for (int i = 0; i < 10; i++) {
-        printf("hex: %x, dec:%d\n", hex_val, hex_val);
+    // records how far into scan buffer the scanner is in
+    unsigned int bufc;
+
+    char scan_buf[5], val;
+    //fscanf(hex, "%x: ", &hex_val);
+    //pc = hex_val;
+
+    /*for (int i = 0; i < 50; i++) {
+        printf("%x\n", hex_val);
+        if (hex_val > 0xff) {
+            fscanf(hex, "%x: ", &hex_val);
+        }
         fscanf(hex, "%x", &hex_val);
+    }*/
+
+    while ((val = getc(hex)) != EOF) {
+        if (val == ' ')
+            break;
+        scan_buf[bufc] = val;
+        bufc++;
     }
+    scan_buf[bufc-1] = '\0';
+    bufc = 0;
 
-    //printf("%s starts with a pointer counter value of 0x%x (%d)\n", argv[1], pc, pc);
+    printf("PC: %s\n", scan_buf);
 
+    while ((val = getc(hex)) != EOF) {
+        if (val == '\n') {
+            scan_buf[bufc] = '\0';
+            printf("%s ", scan_buf);
+            bufc = 0;
+            while ((val = getc(hex)) != EOF && val != ':') {
+                // pass the PC
+            }
+        }
+        else if (val == ' ') {
+            scan_buf[bufc] = '\0';
+            printf("%s ", scan_buf);
+            bufc = 0;
+        } else {
+            scan_buf[bufc] = val;
+            bufc++;
+        }
+    }
 
     fclose(hex);
     return 0;
