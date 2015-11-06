@@ -1,0 +1,12 @@
+absolute (DONE)
+zp (DONE)
+zpx (DONE)
+zpy (DONE)
+absx
+absy
+imm (DONE)
+relative
+implicit
+indirect
+indexed indirect (x, y) (add register to address, get value from new address)
+indirect indexed (x, y) (get value from address, add register to value)
