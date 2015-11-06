@@ -1,10 +1,25 @@
 #include <stdio.h>
+#include <math.h>
 #include "opcodes.h"
 
+unsigned int get_hex_from_char(char c);
+unsigned int get_hex_from_chars(char *c);
+
+unsigned int get_hex_from_char(char c) {
+    unsigned int hex_val;
+    if (c-'0' >= 0 && c-'0' <= 9) {
+        hex_val = c-'0';
+    } else if (c-'a' >= 0 && c-'f' <= 0) {
+        hex_val = c-'a' + 10;
+    }
+    return hex_val;
+}
+
 unsigned int get_hex_from_chars(char *c) {
-    //
-    if (c[0]-'0' >= '0' && c[0]-'0' =< '9') {
-        c[0]-'0'
+    unsigned int hex_val = 0, length;
+    for (int i = 0; c[i] != '\0'; i++)
+        hex_val = get_hex_from_char(c[i]) + (hex_val << 4);
+    return hex_val;
 }
 
 int main(int argc, char **argv) {
@@ -24,22 +39,11 @@ int main(int argc, char **argv) {
         return 2;
     }
 
+    unsigned int mem[0xffff];
     unsigned int pc, hex_val;
-
     // records how far into scan buffer the scanner is in
     unsigned int bufc;
-
     char scan_buf[5], val;
-    //fscanf(hex, "%x: ", &hex_val);
-    //pc = hex_val;
-
-    /*for (int i = 0; i < 50; i++) {
-        printf("%x\n", hex_val);
-        if (hex_val > 0xff) {
-            fscanf(hex, "%x: ", &hex_val);
-        }
-        fscanf(hex, "%x", &hex_val);
-    }*/
 
     while ((val = getc(hex)) != EOF) {
         if (val == ' ')
@@ -50,12 +54,12 @@ int main(int argc, char **argv) {
     scan_buf[bufc-1] = '\0';
     bufc = 0;
 
-    printf("PC: %s\n", scan_buf);
+    pc = get_hex_from_chars(scan_buf);
 
     while ((val = getc(hex)) != EOF) {
         if (val == '\n') {
             scan_buf[bufc] = '\0';
-            printf("%s ", scan_buf);
+            mem[pc++] = get_hex_from_chars(scan_buf);
             bufc = 0;
             while ((val = getc(hex)) != EOF && val != ':') {
                 // pass the PC
@@ -63,7 +67,7 @@ int main(int argc, char **argv) {
         }
         else if (val == ' ') {
             scan_buf[bufc] = '\0';
-            printf("%s ", scan_buf);
+            mem[pc++] = get_hex_from_chars(scan_buf);
             bufc = 0;
         } else {
             scan_buf[bufc] = val;
@@ -72,5 +76,11 @@ int main(int argc, char **argv) {
     }
 
     fclose(hex);
+
+    for (int i = 0x600; i < 0x61c; i++) {
+        printf("%x ", mem[i]);
+    }
+    printf("\n");
+
     return 0;
 }
