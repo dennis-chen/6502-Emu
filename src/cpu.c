@@ -57,9 +57,8 @@ void freeCPU(CPU *c){
 void print(CPU *c){
     printf("PC: ");
     printf("%d\n", c->PC);
-    //printf("STATUS REG: ");
-    printf("C, Z, I, D, B, NOT_USED_FLAG, V, S");
-    printf("%d\n", c->regs[STATUS]);
+    printf("SVUBDIZC\n");
+    printf("%s\n",getStatus(c));
     printf("STACK REG: ");
     printf("%d\n", c->regs[STACK]);
     printf("ACCUM REG: ");
@@ -68,6 +67,21 @@ void print(CPU *c){
     printf("%d\n", c->regs[IND_X]);
     printf("IND_Y REG: ");
     printf("%d\n", c->regs[IND_Y]);
+}
+
+char * getStatus(CPU *c){
+    return byte_to_binary(c->regs[STATUS]);
+}
+
+const char *byte_to_binary(int x){
+    static char b[9];
+    b[0] = '\0';
+    int z;
+    for (z = 128; z > 0; z >>= 1)
+    {
+        strcat(b, ((x & z) == z) ? "1" : "0");
+    }
+    return b;
 }
 
 /* set byte value in one of the eight bit 
@@ -80,10 +94,11 @@ int8_t getRegByte(CPU *c, REG name){
     return c->regs[name];
 }
 
-void setFlag(CPU *c, FLAG name, int val){
+void setFlag(CPU *c, FLAG name, int8_t val){
     //bit 5 of the status register is not to be set
     //and should always be 1
     assert(name != NOT_USED_FLAG);
+    printf("Setting flag:%d\n",name);
     setRegBit(c, STATUS, name, val);
 }
 
@@ -112,14 +127,14 @@ void setCarry(CPU *c, int16_t val){
     //val > 0b11111111, largest
     //eight bit val
     int8_t carry = val > 0xFF ? 1 : 0;
-    setFlag(c,V,carry);
+    setFlag(c,C,carry);
 }
 
 void setCarryBCD(CPU *c, int16_t val){
     //sets carry flag if
     //val > 0x99, for addition in BCD mode
     int8_t carry = val > 0x99 ? 1 : 0;
-    setFlag(c,V,carry);
+    setFlag(c,C,carry);
 }
 
 void setOverflow(CPU *c, int8_t a, int8_t b, int8_t val){
@@ -128,6 +143,7 @@ void setOverflow(CPU *c, int8_t a, int8_t b, int8_t val){
     //this bit twiddling from:
     //http://nesdev.com/6502.txt
     int8_t overflow = !((a ^ b) & 0x80) && ((a ^ val) & 0x80);
+    printf("overflow: %d\n",overflow);
     //overflow = signs of operands are the same AND
     //          sign of result not equal to sign of operands
     setFlag(c,V,overflow);
@@ -143,7 +159,7 @@ void setSign(CPU *c, int8_t val){
 void setZero(CPU *c, int8_t val){
     //sets zero flag to 0 if val == 0
     //and zero flag to 1 otherwise
-    int8_t isZero = val? 1 : 0 ;
+    int8_t isZero = val? 0 : 1 ;
     setFlag(c,Z,isZero);
 }
 
@@ -174,6 +190,7 @@ void ADC(CPU *c, OP_CODE_INFO *o){
     int8_t accum = getRegByte(c,ACCUM);
     int8_t operand = o->operand;
     int16_t sum = carry + accum + operand;
+    printf("sum:%d\n",sum);
     setZero(c,sum);
     if(getFlag(c,D)){ //in decimal mode
         //if lower 4 bits of operands plus

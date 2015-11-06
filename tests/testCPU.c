@@ -38,8 +38,8 @@ static char * ADC3() {
     CPU *c = getCPU();
     print(c);
     int8_t accumVal = testADCHelper(c,104,45);
-    mu_assert("ADC test 3 err, ACCUM reg != -107", accumVal == -107);
     print(c);
+    mu_assert("ADC test 3 err, ACCUM reg != -107", accumVal == -107);
     mu_assert("ADC test 3 err, V flag != 1", getFlag(c,V) == 1);
     free(c);
     return 0;
@@ -56,10 +56,10 @@ static char * ADC4() {
 }
 
 static char * all_tests() {
-    mu_run_test(ADC1);
-    mu_run_test(ADC2);
+    //mu_run_test(ADC1);
+    //mu_run_test(ADC2);
     mu_run_test(ADC3);
-    mu_run_test(ADC4);
+    //mu_run_test(ADC4);
     return 0;
 }
 
