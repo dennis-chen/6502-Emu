@@ -1,3 +1,4 @@
+// *** Referenced https://github.com/haldean/x6502 ***
 // Opcodes that use multiple addressing modes are named in the form of
 // I_A, where I is the instruction and A is the addressing mode. All
 // possible addressing modes are:
@@ -22,6 +23,9 @@
 //           only address first 256 bytes of memory using ZP)
 //      ZPX: zero-page,X, add next byte to X modulo 0xFF and use that as a
 //           memory address
+
+#ifndef __6502_opcodes__
+#define __6502_opcodes__
 
 #define ADC_IMM     0x69
 #define ADC_ZP      0x65
@@ -85,3 +89,5 @@
 #define TAY         0xAB
 
 #define TYA         0x98
+
+#endif
