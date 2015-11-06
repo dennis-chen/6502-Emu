@@ -59,26 +59,47 @@ opcodes = {
     'WDM': {'SNGL': 'null', 'INDY': 'null', 'IMM': '0x42', 'INDX': 'null', 'ZPX': 'null', 'ABS': 'null', 'ABSY': 'null', 'BRA': 'null', 'ZPY': 'null', 'IND': 'null', 'ZP': '0x42', 'ABSX': 'null'},
 }
 
-X = 0
-Y = 0
-
-fileName = input("Select an assembly file: ")
+fileName = input('Select an assembly file: ')
 file = open(fileName)
 for line in file:
-    (command, operand) = line.split(' ', 2)
+
+    (command, operand) = ('', '')
+    try:
+        (command, operand) = line.split(' ', 2)
+    except ValueError:
+        command = line.strip()
+
     if command in opcodes.keys():
-        # immediates
-        if operand[0] == "#":
-            print(opcodes[command]['IMM'][2:], operand[2:])
+        #implicit
+        if operand == '':
+            print(opcodes[command]['SNGL'][2:])
         else:
-            if operand[0] == "$":
-                # zero page (not dealing with relative yet)
-                if len(operand) == 3:
+            # immediates
+            if operand[0] == '#':
+                print(opcodes[command]['IMM'][2:], operand[2:])
+            elif operand[0] == '(':
+                # indexed indirect
+                if operand[4] == ',':
+                    print(opcodes[command]['INDX'][2:], operand[2:4])
+                # indirect index
+                elif operand[5] == ',':
+                    print(opcodes[command]['INDY'][2:], operand[2:4])
+                # indirect
+                else:
+                    print(opcodes[command]['IND'][2:], operand[4:6], operand[2:4])
+            elif operand[0] == '$':
+                operandLength = len(operand)
+                # absolute X and Y
+                if operandLength == 7:
+                    mode = 'ABS' + operand[6].upper()
+                    print(opcodes[command][mode][2:], operand[3:5], operand[1:3])
+                # zero page
+                elif operandLength == 3:
                     print(opcodes[command]['ZP'][2:], operand[1:])
-                elif operand[3] == ",":
+                elif operand[3] == ',':
                     # zero page X and Y
                     mode = 'ZP' + operand[4].upper()
                     print(opcodes[command][mode][2:], operand[1:3])
-                # absolute (need to add conditions once other modes are ready)
+                # absolute
                 else:
                     print(opcodes[command]['ABS'][2:], operand[3:], operand[1:3])
