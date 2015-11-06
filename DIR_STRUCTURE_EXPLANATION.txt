@@ -11,5 +11,13 @@
 
 ______________________________________________________________________________
 
+To add a function to the cpu.c file:
+    Make sure to declare the function in the corresponding cpu.h header file.
+
+To compile and link:
+    navigate to the tools/ dir and run 'make all'
+
+To run the exec:
+    run exec in bin/
 
 

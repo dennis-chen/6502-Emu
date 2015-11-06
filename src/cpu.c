@@ -12,16 +12,24 @@ void setRegBit(CPU *c, REG name, int8_t bit, int8_t val){
                     (val << bit);
 }
 
+int8_t getRegBit(CPU *c, REG name, int8_t bit){
+    //bit must be between 0 and 7 since registers
+    //are 8 bits
+    assert(bit > -1 && bit < 8);
+    return (c->regs[name] & (1 << bit)) > 0 ? 1 : 0;
+}
+
 /* CPU initializer */
 CPU * getCPU(){
     CPU *c = malloc(sizeof(CPU));
+    c-> PC = 0;
     //initialize 8 bit registers
     int NUM_REG = 5;
-    int8_t *r = malloc(sizeof(int8_t)*NUM_REG);
+    int8_t *r = calloc(NUM_REG,sizeof(int8_t));
     c-> regs = r;
     //initialize address space
     int ADDR_SPACE_SIZE = 65536;
-    int8_t *a= malloc(sizeof(int8_t)*ADDR_SPACE_SIZE);
+    int8_t *a= calloc(ADDR_SPACE_SIZE,sizeof(int8_t));
     c-> addressSpace = a;
     //set bit 5 of status register to 1
     //to match specifications
@@ -29,11 +37,28 @@ CPU * getCPU(){
     return c;
 }
 
+void resetCPU(CPU *c){
+    //resets CPU to initial state as if it has just been initialized
+    int NUM_REG = 5;
+    memset(c->regs, 0, NUM_REG*sizeof(int8_t));
+    int ADDR_SPACE_SIZE = 65536;
+    memset(c->addressSpace, 0, ADDR_SPACE_SIZE*sizeof(int8_t));
+    c->PC = 0;
+    setRegBit(c, STATUS, 5, 1);
+}
+
+void freeCPU(CPU *c){
+    free(c->regs);
+    free(c->addressSpace);
+    free(c);
+}
+
 /* prints state of CPU registers */
 void print(CPU *c){
     printf("PC: ");
     printf("%d\n", c->PC);
-    printf("STATUS REG: ");
+    //printf("STATUS REG: ");
+    printf("C, Z, I, D, B, NOT_USED_FLAG, V, S");
     printf("%d\n", c->regs[STATUS]);
     printf("STACK REG: ");
     printf("%d\n", c->regs[STACK]);
@@ -66,8 +91,7 @@ int8_t getFlag(CPU *c, FLAG name){
     //bit 5 of the status register is not to be set
     //and should always be 1
     assert(name != NOT_USED_FLAG);
-    int8_t flag =  c->regs[STATUS] & (1 << name) ? 1 : 0;
-    return flag;
+    return getRegBit(c, STATUS, name);
 }
 
 int8_t read(CPU *c, int16_t addr){
@@ -129,6 +153,10 @@ OP_CODE_INFO * getOP_CODE_INFO(int8_t operand, int16_t address, MODE mode){
     o->address = address;
     o->mode = mode;
     return o;
+}
+
+void freeOP_CODE_INFO(OP_CODE_INFO *o){
+    free(o);
 }
 
 /* STACK OPERATIONS HERE */
