@@ -1,19 +1,4 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-typedef enum {
-    //enums for 8 bit registers
-    STATUS, STACK, ACCUM, IND_X, IND_Y
-} REG;
-
-typedef struct {
-    //CPU registers
-    int16_t PC;
-    int8_t *regs;
-    int8_t *addressSpace;
-} CPU;
+#include "cpu.h"
 
 /* sets a single bit of one of the eight bit 
  * registers on CPU to val */
@@ -27,16 +12,24 @@ void setRegBit(CPU *c, REG name, int8_t bit, int8_t val){
                     (val << bit);
 }
 
+int8_t getRegBit(CPU *c, REG name, int8_t bit){
+    //bit must be between 0 and 7 since registers
+    //are 8 bits
+    assert(bit > -1 && bit < 8);
+    return (c->regs[name] & (1 << bit)) > 0 ? 1 : 0;
+}
+
 /* CPU initializer */
 CPU * getCPU(){
     CPU *c = malloc(sizeof(CPU));
+    c-> PC = 0;
     //initialize 8 bit registers
     int NUM_REG = 5;
-    int8_t *r = malloc(sizeof(int8_t)*NUM_REG);
+    int8_t *r = calloc(NUM_REG,sizeof(int8_t));
     c-> regs = r;
     //initialize address space
     int ADDR_SPACE_SIZE = 65536;
-    int8_t *a= malloc(sizeof(int8_t)*ADDR_SPACE_SIZE);
+    int8_t *a= calloc(ADDR_SPACE_SIZE,sizeof(int8_t));
     c-> addressSpace = a;
     //set bit 5 of status register to 1
     //to match specifications
@@ -44,11 +37,28 @@ CPU * getCPU(){
     return c;
 }
 
+void resetCPU(CPU *c){
+    //resets CPU to initial state as if it has just been initialized
+    int NUM_REG = 5;
+    memset(c->regs, 0, NUM_REG*sizeof(int8_t));
+    int ADDR_SPACE_SIZE = 65536;
+    memset(c->addressSpace, 0, ADDR_SPACE_SIZE*sizeof(int8_t));
+    c->PC = 0;
+    setRegBit(c, STATUS, 5, 1);
+}
+
+void freeCPU(CPU *c){
+    free(c->regs);
+    free(c->addressSpace);
+    free(c);
+}
+
 /* prints state of CPU registers */
 void print(CPU *c){
     printf("PC: ");
     printf("%d\n", c->PC);
-    printf("STATUS REG: ");
+    //printf("STATUS REG: ");
+    printf("C, Z, I, D, B, NOT_USED_FLAG, V, S");
     printf("%d\n", c->regs[STATUS]);
     printf("STACK REG: ");
     printf("%d\n", c->regs[STACK]);
@@ -70,20 +80,6 @@ int8_t getRegByte(CPU *c, REG name){
     return c->regs[name];
 }
 
-/* In order from bit 0 to 7:
-    C: Carry flag (set for carry in addition, borrow in subtraction)
-    Z: Zero flag (set if zero)
-    I: Interrupt flag (set to disable)
-    D: Decimal mode flag (set to treat numbers as binary coded decimals in adding/subtracting)
-    B: Interrupt flag (set when a software interruption BRK is executed)
-    NOT_USED_FLAG: this is always set. seriously, don't use it.
-    V: Overflow flag (set if value too large to be represented in a byte)
-    S: Sign flag (set if negative)
-*/
-typedef enum {
-    C, Z, I, D, B, NOT_USED_FLAG, V, S
-} FLAG;
-
 void setFlag(CPU *c, FLAG name, int val){
     //bit 5 of the status register is not to be set
     //and should always be 1
@@ -95,34 +91,8 @@ int8_t getFlag(CPU *c, FLAG name){
     //bit 5 of the status register is not to be set
     //and should always be 1
     assert(name != NOT_USED_FLAG);
-    int8_t flag =  c->regs[STATUS] & (1 << name) ? 1 : 0;
-    return flag;
+    return getRegBit(c, STATUS, name);
 }
-
-typedef enum {
-    Immediate,
-    Absolute,
-    ZeroPageAbsolute,
-    Implied,
-    Accumulator,
-    Indexed,
-    ZeroPageIndexed,
-    Indirect,
-    PreIndexedIndirect,
-    PostIndexedIndirect,
-    Relative
-} MODE;
-
-typedef struct {
-    //holds information that op codes
-    //need to execute
-    int8_t operand;
-    //address that operand is fetched
-    //from is needed for operations
-    //like LSR
-    int16_t address;
-    MODE mode;
-} OP_CODE_INFO;
 
 int8_t read(CPU *c, int16_t addr){
     //placeholder code 
@@ -175,6 +145,18 @@ void setZero(CPU *c, int8_t val){
     //and zero flag to 1 otherwise
     int8_t isZero = val? 1 : 0 ;
     setFlag(c,Z,isZero);
+}
+
+OP_CODE_INFO * getOP_CODE_INFO(int8_t operand, int16_t address, MODE mode){
+    OP_CODE_INFO *o = malloc(sizeof(OP_CODE_INFO));
+    o->operand = operand;
+    o->address = address;
+    o->mode = mode;
+    return o;
+}
+
+void freeOP_CODE_INFO(OP_CODE_INFO *o){
+    free(o);
 }
 
 /* STACK OPERATIONS HERE */
@@ -455,9 +437,11 @@ void PLP(CPU *c, OP_CODE_INFO *o){
     // setRegByte(c, STATUS, PULL(c));
 }
 
+/*
 int main ()
 {
     CPU *c = getCPU();
     print(c);
     return 0;
 }
+*/
