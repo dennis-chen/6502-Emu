@@ -1,4 +1,4 @@
-LDA #$01
+LDA #$01 ;this is a comment
 STA $2345
 STA $67,X
 STX $89,Y
@@ -9,3 +9,7 @@ JMP $4032
 JMP ($4032)
 LDA ($99,X)
 LDA ($56),Y
+aLabel:
+BRK
+label2: JMP $9876
+BNE aLabel
