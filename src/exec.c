@@ -2,8 +2,13 @@
 #include <math.h>
 #include "opcodes.h"
 
+#define int8_t  __int8_t
+#define int16_t __int16_t
+#define uint8_t __uint8_t
+
 unsigned int get_hex_from_char(char c);
 unsigned int get_hex_from_chars(char *c);
+int16_t load_program(int argc, char **argv, uint8_t *mem, int16_t start);
 
 unsigned int get_hex_from_char(char c) {
     unsigned int hex_val;
@@ -11,76 +16,100 @@ unsigned int get_hex_from_char(char c) {
         hex_val = c-'0';
     } else if (c-'a' >= 0 && c-'f' <= 0) {
         hex_val = c-'a' + 10;
+    } else {
+        printf("Invalid hex symbol\n");
+        return 0;
     }
     return hex_val;
 }
 
 unsigned int get_hex_from_chars(char *c) {
     unsigned int hex_val = 0, length;
-    for (int i = 0; c[i] != '\0'; i++)
+    for (int i = 0; c[i] != '\0' && c[i] != ' ' && c[i] != '\n'; i++)
         hex_val = get_hex_from_char(c[i]) + (hex_val << 4);
     return hex_val;
 }
 
-int main(int argc, char **argv) {
+int16_t load_program(int argc, char **argv, uint8_t *mem, int16_t start) {
+    /*
+     * Reads the specified hex dump file and loads it into memory
+     * mem should have allocated 0xFFFF entries of 1 byte of memory
+     * Returns the program counter that corresponds to the last
+     * instruction
+     */
     if (argc < 2) {
         printf("Error: expecting command line argument with hex dump file to be opened.\n");
-        return 1;
+        return start;
     }
     if (argc > 2) {
         printf("Error: too many command line arguments (only 1 is needed)\n");
-        return 1;
+        return start;
     }
 
     FILE *hex;
 
     if ( (hex = fopen(argv[1], "r")) == NULL) {
         printf("Error: unable to open file %s\n", argv[1]);
-        return 2;
+        return start;
     }
 
-    unsigned int mem[0xffff];
-    unsigned int pc, hex_val;
+    int16_t pc;
+    uint8_t hex_val;
     // records how far into scan buffer the scanner is in
-    unsigned int bufc;
-    char scan_buf[5], val;
+    unsigned int bufc = 0;
+    char scan_buf[6], val;
+
+    pc = start;
 
     while ((val = getc(hex)) != EOF) {
-        if (val == ' ')
-            break;
-        scan_buf[bufc] = val;
-        bufc++;
-    }
-    scan_buf[bufc-1] = '\0';
-    bufc = 0;
-
-    pc = get_hex_from_chars(scan_buf);
-
-    while ((val = getc(hex)) != EOF) {
-        if (val == '\n') {
-            scan_buf[bufc] = '\0';
-            mem[pc++] = get_hex_from_chars(scan_buf);
-            bufc = 0;
-            while ((val = getc(hex)) != EOF && val != ':') {
-                // pass the PC
-            }
+        while (val != '\n' && val != ' ' && val != EOF) {
+            scan_buf[bufc++] = val;
+            val = getc(hex);
         }
-        else if (val == ' ') {
-            scan_buf[bufc] = '\0';
-            mem[pc++] = get_hex_from_chars(scan_buf);
-            bufc = 0;
-        } else {
-            scan_buf[bufc] = val;
-            bufc++;
-        }
+        scan_buf[bufc] = '\0';
+        if (bufc && scan_buf[bufc-1] != ':')
+            mem[pc++] = (uint8_t) get_hex_from_chars(scan_buf);
+        bufc = 0;
     }
 
     fclose(hex);
 
-    for (int i = 0x600; i < 0x61c; i++) {
-        printf("%x ", mem[i]);
+    return pc;
+}
+
+void test_1() {
+    char *test_words[6] = {"0600: ", "8f", "16", "3f", " 4d", "4d "};
+    int8_t testhex = 0;
+    for (int i = 0; i < sizeof(test_words)/sizeof(test_words[0]); i++) {
+        testhex = get_hex_from_chars(test_words[i]);
+        printf("%s\t%x\t%d\n", test_words[i], testhex, testhex);
     }
+}
+
+void test_2(int argc, char **argv) {
+    uint8_t mem[0xffff];
+    int16_t start = 0x60, end = load_program(argc, argv, mem, start);
+
+    if (start == end) {
+        printf("Test 2 failed");
+        return;
+    }
+
+    printf("Loaded program into memory location %x to %x\n", start, end);
+    for (int i = start; i < end; i++)
+        printf("%02x ", mem[i]);
     printf("\n");
+
+    printf("This memory should match the input hexdump file \"%s\"\n", argv[1]);
+    FILE *hexdump = fopen(argv[1], "r");
+    char c;
+    while ((c = getc(hexdump)) != EOF)
+        printf("%c", c);
+    fclose(hexdump);
+}
+
+int main(int argc, char **argv) {
+    test_2(argc, argv);
 
     return 0;
 }
