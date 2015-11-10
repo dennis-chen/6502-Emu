@@ -126,9 +126,6 @@ void setCarry(CPU *c, int16_t val){
     //val > 0b11111111, largest
     //eight bit val
     int8_t carry = val > 0xFF ? 1 : 0;
-    printf("setCary\n");
-    printf("%d\n",val);
-    printf("%d\n",val - 0xFF);
     setFlag(c,C,carry);
 }
 
@@ -190,11 +187,9 @@ void ADC(CPU *c, OP_CODE_INFO *o){
     int8_t carry = getFlag(c,C);
     int8_t accum = getRegByte(c,ACCUM);
     int8_t operand = o->operand;
-    //TODO: PROBLEM: carry, accum, and operand are NOT automatically cast to int16_ts
-    //first, so the set Carry breaks, since sum is effectively a byte value
-    int16_t sum = carry + accum + operand;
-    printf("%d",sum);
-    setZero(c,sum);
+    int16_t sum = (0x00FF&carry) + (0x00FF&accum) + (0x00FF&operand);
+    int8_t sumByte = sum & 0x00FF;
+    setZero(c,sumByte);
     if(getFlag(c,D)){ //in decimal mode
         //if lower 4 bits of operands plus
         //the carry in are larger than 9,
@@ -204,19 +199,19 @@ void ADC(CPU *c, OP_CODE_INFO *o){
             + carry > 9){
             sum += 6;
         }
-        setSign(c,sum);
-        setOverflow(c,accum,operand,sum);
+        setSign(c,sumByte);
+        setOverflow(c,accum,operand,sumByte);
         //if the higher bits aren't in
         //BCD format we need to add 96 to convert.
         //Black magic from http://nesdev.com/6502.txt
         sum += sum > 0x99 ? 96 : 0;
         setCarryBCD(c, sum);
     } else {
-        setSign(c,sum);
-        setOverflow(c,accum,operand,sum);
+        setSign(c,sumByte);
+        setOverflow(c,accum,operand,sumByte);
         setCarry(c,sum);
     }
-    setRegByte(c,ACCUM,sum);
+    setRegByte(c,ACCUM,sumByte);
 }
 
 void AND(CPU *c, OP_CODE_INFO *o){
@@ -231,10 +226,11 @@ void AND(CPU *c, OP_CODE_INFO *o){
 //Arithmetic shift left
 void ASL(CPU *c, OP_CODE_INFO *o){
     int8_t operand = o->operand;
-    int16_t res = operand << 1;
+    int16_t res = (0x00FF&operand) << 1;
+    int8_t resByte = res & 0x00FF;
     setCarry(c,res);
-    setSign(c,res);
-    setZero(c,res);
+    setSign(c,resByte);
+    setZero(c,resByte);
     if(o->mode == Accumulator){
         setRegByte(c,ACCUM,res);
     } else {
