@@ -1,14 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "opcodes.h"
-
-#define int8_t  __int8_t
-#define int16_t __int16_t
-#define uint8_t __uint8_t
-
-unsigned int get_hex_from_char(char c);
-unsigned int get_hex_from_chars(char *c);
-int16_t load_program(int argc, char **argv, uint8_t *mem, int16_t start);
+#include "exec.h"
 
 unsigned int get_hex_from_char(char c) {
     unsigned int hex_val;
@@ -106,10 +99,4 @@ void test_2(int argc, char **argv) {
     while ((c = getc(hexdump)) != EOF)
         printf("%c", c);
     fclose(hexdump);
-}
-
-int main(int argc, char **argv) {
-    test_2(argc, argv);
-
-    return 0;
 }

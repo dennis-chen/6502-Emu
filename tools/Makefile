@@ -4,5 +4,12 @@
 	gcc -c ../tests/testCPU.c -o ../bin/testCPU.o
 ../bin/testCPU: ../bin/cpu.o ../bin/testCPU.o
 	gcc ../bin/cpu.o ../bin/testCPU.o  -o ../bin/testCPU
+../bin/run_ops: ../bin/run_ops.o ../bin/exec.o
+	gcc -o ../bin/run_ops ../bin/run_ops.o ../bin/exec.o
+../bin/run_ops.o: ../src/run_ops.c ../src/opcodes.h ../src/exec.h
+	gcc -c ../src/run_ops.c -o ../bin/run_ops.o
+../bin/exec.o: ../src/exec.c ../src/opcodes.h ../src/exec.h
+	gcc -c ../src/exec.c -o ../bin/exec.o
 
 all: ../bin/testCPU
+runops: ../bin/run_ops
