@@ -11,7 +11,7 @@ typedef enum reg {
 
 typedef struct cpu {
     //CPU registers
-    int16_t PC;
+    uint16_t PC;
     int8_t *regs;
     int8_t *addressSpace;
 } CPU; 
@@ -37,7 +37,7 @@ typedef struct op_code_info {
     //address that operand is fetched
     //from is needed for operations
     //like LSR
-    int16_t address;
+    uint16_t address;
     MODE mode;
 } OP_CODE_INFO;
 
@@ -86,13 +86,19 @@ void PHA(CPU *c, OP_CODE_INFO *o);
 void PHP(CPU *c, OP_CODE_INFO *o);
 void PLA(CPU *c, OP_CODE_INFO *o);
 void PLP(CPU *c, OP_CODE_INFO *o);
+void SBC(CPU *c, OP_CODE_INFO *o);
+void SEC(CPU *c, OP_CODE_INFO *o);
+void STA(CPU *c, OP_CODE_INFO *o);
+void STX(CPU *c, OP_CODE_INFO *o);
+void TAY(CPU *c, OP_CODE_INFO *o);
+void TYA(CPU *c, OP_CODE_INFO *o);
 void setZero(CPU *c,int8_t val);
 void setSign(CPU *c,int8_t val);
 void setOverflow(CPU *c,int8_t a,int8_t b,int8_t val);
 void setCarryBCD(CPU *c,int16_t val);
 void setCarry(CPU *c,int16_t val);
-void write(CPU *c,int16_t addr,int8_t val);
-int8_t read(CPU *c,int16_t addr);
+void write(CPU *c,uint16_t addr,int8_t val);
+int8_t read(CPU *c,uint16_t addr);
 int8_t getFlag(CPU *c,FLAG name);
 void setFlag(CPU *c,FLAG name,int8_t val);
 int8_t getRegByte(CPU *c,REG name);
@@ -102,7 +108,7 @@ char * getStatus(CPU *c);
 CPU *getCPU();
 void resetCPU(CPU *c);
 void freeCPU(CPU *c);
-OP_CODE_INFO *getOP_CODE_INFO(int8_t operand, int16_t address, MODE mode);
+OP_CODE_INFO *getOP_CODE_INFO(int8_t operand, uint16_t address, MODE mode);
 void freeOP_CODE_INFO(OP_CODE_INFO *o);
 void setRegBit(CPU *c,REG name,int8_t bit,int8_t val);
 int8_t getRegBit(CPU *c,REG name,int8_t bit);

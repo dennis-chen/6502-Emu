@@ -108,14 +108,14 @@ int8_t getFlag(CPU *c, FLAG name){
     return getRegBit(c, STATUS, name);
 }
 
-int8_t read(CPU *c, int16_t addr){
+int8_t read(CPU *c, uint16_t addr){
     //placeholder code 
     //TODO: replace this w/ actual implementation
     int8_t placeholder = c->addressSpace[addr];
     return placeholder;
 }
 
-void write(CPU *c, int16_t addr, int8_t val){
+void write(CPU *c, uint16_t addr, int8_t val){
     c->addressSpace[addr] = val;
 }
 
@@ -147,6 +147,17 @@ void setOverflow(CPU *c, int8_t a, int8_t b, int8_t val){
     setFlag(c,V,overflow);
 }
 
+void setOverflowSubtract(CPU *c, int8_t a, int8_t b, int8_t val){
+    //sets overflow if overflow in twos complement 
+    //occurred when subtracting b from a to get val
+    //this bit twiddling from:
+    //http://nesdev.com/6502.txt
+    int8_t overflow = ((a ^ b) & 0x80) && ((a ^ val) & 0x80);
+    //overflow = signs of operands are the same AND
+    //          sign of result not equal to sign of operands
+    setFlag(c,V,overflow);
+}
+
 void setSign(CPU *c, int8_t val){
     //sets sign flag equal to sign
     //of bit 7 of val
@@ -161,7 +172,7 @@ void setZero(CPU *c, int8_t val){
     setFlag(c,Z,isZero);
 }
 
-OP_CODE_INFO * getOP_CODE_INFO(int8_t operand, int16_t address, MODE mode){
+OP_CODE_INFO * getOP_CODE_INFO(int8_t operand, uint16_t address, MODE mode){
     OP_CODE_INFO *o = malloc(sizeof(OP_CODE_INFO));
     o->operand = operand;
     o->address = address;
@@ -211,7 +222,7 @@ void ADC(CPU *c, OP_CODE_INFO *o){
         setOverflow(c,accum,operand,sumByte);
         setCarry(c,sum);
     }
-    setRegByte(c,ACCUM,sumByte);
+    setRegByte(c,ACCUM,sum&0xFF);
 }
 
 void AND(CPU *c, OP_CODE_INFO *o){
@@ -241,7 +252,7 @@ void ASL(CPU *c, OP_CODE_INFO *o){
 //Branch if carry clear
 void BCC(CPU *c, OP_CODE_INFO *o){
     if(!getFlag(c,C)){
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
@@ -249,7 +260,7 @@ void BCC(CPU *c, OP_CODE_INFO *o){
 //Branch if carry set
 void BCS(CPU *c, OP_CODE_INFO *o){
     if(getFlag(c,C)){
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
@@ -257,7 +268,7 @@ void BCS(CPU *c, OP_CODE_INFO *o){
 //Branch if equals
 void BEQ(CPU *c, OP_CODE_INFO *o){
     if(getFlag(c,Z)){
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
@@ -276,7 +287,7 @@ void BIT(CPU *c, OP_CODE_INFO *o){
 // Branch if result minus
 void BMI(CPU *c, OP_CODE_INFO *o){
     if (getFlag(c, S)) {
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
@@ -284,7 +295,7 @@ void BMI(CPU *c, OP_CODE_INFO *o){
 // Branch if not equals
 void BNE(CPU *c, OP_CODE_INFO *o){
     if(!(getFlag(c,Z))){
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
@@ -292,7 +303,7 @@ void BNE(CPU *c, OP_CODE_INFO *o){
 // Branch if result plus
 void BPL(CPU *c, OP_CODE_INFO *o){
     if(!(getFlag(c,S))){
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
@@ -371,7 +382,7 @@ void CPY(CPU *c, OP_CODE_INFO *o){
 
 //Jump PC to 16 bit operand
 void JMP(CPU *c, OP_CODE_INFO *o){
-    c->PC = o->operand;
+    c->PC = 0xFFFF&(o->address);
 }
 
 //Jump to subroutine
@@ -451,6 +462,55 @@ void PLA(CPU *c, OP_CODE_INFO *o){
 // Pull status register from stack
 void PLP(CPU *c, OP_CODE_INFO *o){
     // setRegByte(c, STATUS, PULL(c));
+}
+
+// Subtract operand from accumulator with borrow
+void SBC(CPU *c, OP_CODE_INFO *o){
+    int8_t carry = getFlag(c,C);
+    int8_t accum = getRegByte(c,ACCUM);
+    int8_t operand = o->operand;
+    int16_t diff = (0x00FF&accum) - (0x00FF&operand) - (0x00FF&carry);
+    int8_t diffByte = diff & 0x00FF;
+    setSign(c,diffByte);
+    setZero(c,diffByte);
+    setOverflowSubtract(c,accum,operand,diffByte);
+    if(getFlag(c,D)){ //in decimal mode
+        if((accum & 0xF) - carry < (operand & 0xF)){
+            diff -= 6;
+        }
+        if(diff > 0x99){
+            diff -= 0x60;
+        }
+    }
+    setFlag(c,C, diff < 0x100 ? 1 : 0);
+    setRegByte(c,ACCUM,diff&0xFF);
+}
+
+// Set carry flag to 1
+void SEC(CPU *c, OP_CODE_INFO *o){
+    setFlag(c, C, 1);
+}
+
+// Store accumulator reg into memory
+void STA(CPU *c, OP_CODE_INFO *o){
+    write(c, o->address, getRegByte(c,ACCUM));
+}
+
+// Store X reg into memory
+void STX(CPU *c, OP_CODE_INFO *o){
+    write(c, o->address, getRegByte(c,IND_X));
+}
+
+// Transfer accumulator to Y reg
+void TAY(CPU *c, OP_CODE_INFO *o){
+    int8_t accumVal = getRegByte(c,ACCUM);
+    setRegByte(c,IND_Y,accumVal);
+}
+
+// Transfer Y to accumulator
+void TYA(CPU *c, OP_CODE_INFO *o){
+    int8_t accumVal = getRegByte(c,IND_Y);
+    setRegByte(c,ACCUM,accumVal);
 }
 
 /*

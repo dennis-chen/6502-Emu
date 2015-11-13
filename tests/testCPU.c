@@ -38,7 +38,7 @@ static char * ADC1() {
     int8_t accumVal = testADCHelper(c,13,14);
     mu_assert("ADC1 err, ACCUM reg != 27", accumVal == 27);
     mu_run_test_with_args(testRegStatus,c,"00100000",
-            "ADC1 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nADC1 err, %s != %s");
     free(c);
     return 0;
 }
@@ -49,7 +49,7 @@ static char * ADC2() {
     int8_t accumVal = testADCHelper(c,-39,92);
     //mu_assert("ADC2 err, ACCUM reg != 53", accumVal == 53);
     mu_run_test_with_args(testRegStatus,c,"00100001",
-            "ADC2 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nADC2 err, %s != %s");
     free(c);
     return 0;
 }
@@ -60,7 +60,7 @@ static char * ADC3() {
     int8_t accumVal = testADCHelper(c,104,45);
     mu_assert("ADC3 err, ACCUM reg != -107", accumVal == -107);
     mu_run_test_with_args(testRegStatus,c,"11100000",
-            "ADC3 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nADC3 err, %s != %s");
     free(c);
     return 0;
 }
@@ -71,7 +71,7 @@ static char * ADC4() {
     int8_t accumVal = testADCHelper(c,-103,-69);
     mu_assert("ADC4 err, ACCUM reg != 84", accumVal == 84);
     mu_run_test_with_args(testRegStatus,c,"01100001",
-            "ADC4 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nADC4 err, %s != %s");
     free(c);
     return 0;
 }
@@ -83,7 +83,7 @@ static char * ADC5() {
     int8_t accumVal = testADCHelper(c,30,12);
     mu_assert("ADC5 err, ACCUM reg != 43", accumVal == 43);
     mu_run_test_with_args(testRegStatus,c,"00100000",
-            "ADC5 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nADC5 err, %s != %s");
     free(c);
     return 0;
 }
@@ -92,8 +92,16 @@ static char * ADC6() {
     //adding in DECIMAL mode
     CPU *c = getCPU();
     setFlag(c,D,1);
-    //TODO: implement decimal mode tests
-    printf("TODO: implement ADC6\n");
+    //no overflow
+    int8_t accumVal = testADCHelper(c,38,66);
+    mu_assert("ADC6 err, ACCUM reg != 104", accumVal == 104);
+    mu_run_test_with_args(testRegStatus,c,"00101000",
+            "          NVUBDIZC    NVUBDIZC\nADC6 err, %s != %s");
+    //overflow
+    accumVal = testADCHelper(c,52,104);
+    mu_assert("ADC6 err, ACCUM reg != 2", accumVal == 2);
+    mu_run_test_with_args(testRegStatus,c,"11101001",
+            "          NVUBDIZC    NVUBDIZC\nADC6 err, %s != %s");
     free(c);
     return 0;
 }
@@ -164,6 +172,30 @@ static char * ASL2() {
     return 0;
 }
 
+static char * BNE1() {
+    CPU *c = getCPU();
+    uint16_t address = 0x8FFE;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setFlag(c,Z,0);
+    BNE(c,o);
+    freeOP_CODE_INFO(o);
+    mu_assert("BNE1 err, PC != 0x8FFE", c->PC == 0x8FFE);
+    free(c);
+    return 0;
+}
+
+static char * BNE2() {
+    CPU *c = getCPU();
+    uint16_t address = 0xFFFF;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setFlag(c,Z,1);
+    BNE(c,o);
+    freeOP_CODE_INFO(o);
+    mu_assert("BNE1 err, PC != 0", c->PC == 0);
+    free(c);
+    return 0;
+}
+
 static char * all_tests() {
     mu_run_test(ADC1);
     mu_run_test(ADC2);
@@ -175,6 +207,8 @@ static char * all_tests() {
     mu_run_test(AND2);
     mu_run_test(ASL1);
     mu_run_test(ASL2);
+    mu_run_test(BNE1);
+    mu_run_test(BNE2);
     return 0;
 }
 
