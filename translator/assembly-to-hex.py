@@ -85,7 +85,6 @@ for line in file:
         splitLine = line.split(' ')
         arguments = len(splitLine)
         processedLines.append({'data': splitLine, 'length': arguments, 'bytePosition': bytePosition})
-        print(splitLine)
         # we have a label AND an opcode AND an address on this line
         if (arguments == 3 and splitLine[0].endswith(':')):
             # remove colon before adding it to labels
@@ -118,7 +117,7 @@ for line in file:
                 bytePosition += 1
         else:
             continue
-print(labels)
+
 bytePosition = 0
 hexOutput = ""
 # loop to actually convert
