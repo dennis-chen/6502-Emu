@@ -205,6 +205,30 @@ static char * BNE2() {
     return 0;
 }
 
+static char * BPL1() {
+    CPU *c = getCPU();
+    uint16_t address = 0x8FFE;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setFlag(c,S,0);
+    BPL(c,o);
+    mu_assert("BPL1 err, PC != 0x8FFE", c->PC == 0x8FFE);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * BPL2() {
+    CPU *c = getCPU();
+    uint16_t address = 0xFFFF;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setFlag(c,S,1);
+    BPL(c,o);
+    mu_assert("BPL1 err, PC != 0", c->PC == 0);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
 static char * CLC1() {
     CPU *c = getCPU();
     OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
@@ -521,6 +545,8 @@ static char * all_tests() {
     mu_run_test(ASL2);
     mu_run_test(BNE1);
     mu_run_test(BNE2);
+    mu_run_test(BPL1);
+    mu_run_test(BPL2);
     mu_run_test(CLC1);
     mu_run_test(DEY1);
     mu_run_test(DEY2);
