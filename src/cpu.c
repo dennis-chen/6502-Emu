@@ -159,6 +159,9 @@ void freeOP_CODE_INFO(OP_CODE_INFO *o){
     free(o);
 }
 
+/* RUN PROGRAM IN MEMORY */
+//void check_op(CPU *c, 
+
 /* STACK OPERATIONS HERE */
 void PUSH( __attribute__ ((unused)) CPU *c, 
         __attribute__ ((unused)) OP_CODE_INFO *o, 

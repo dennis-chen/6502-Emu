@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "opcodes.h"
-#include "exec.h"
+#include "load_prog.h"
 
-void check_op(uint8_t *mem, int16_t start, int16_t end) {
+void check_op(int8_t *mem, int16_t start, int16_t end) {
     int16_t pc = start;
     while (pc <= end) {
         switch (mem[pc]) {
@@ -58,7 +58,7 @@ void check_op(uint8_t *mem, int16_t start, int16_t end) {
 
 
 int main(int argc, char **argv) {
-    uint8_t mem[0xffff];
+    int8_t mem[0xffff];
     int16_t start = 0x60;
     int16_t end = load_program(argc, argv, mem, start);
     if (start == end)

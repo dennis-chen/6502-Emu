@@ -6,10 +6,10 @@
 	gcc ../bin/cpu.o ../bin/testCPU.o  -o ../bin/testCPU
 ../bin/run_ops: ../bin/run_ops.o ../bin/exec.o
 	gcc -o ../bin/run_ops ../bin/run_ops.o ../bin/exec.o
-../bin/run_ops.o: ../src/run_ops.c ../src/opcodes.h ../src/exec.h
+../bin/run_ops.o: ../src/run_ops.c ../src/opcodes.h ../src/load_prog.h
 	gcc -c ../src/run_ops.c -o ../bin/run_ops.o
-../bin/exec.o: ../src/exec.c ../src/opcodes.h ../src/exec.h
-	gcc -c ../src/exec.c -o ../bin/exec.o
+../bin/load_prog.o: ../src/load_prog.c ../src/load_prog.h
+	gcc -c ../src/load_prog.c -o ../bin/load_prog.o
 
 all: ../bin/testCPU
 runops: ../bin/run_ops

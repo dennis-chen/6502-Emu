@@ -1,10 +1,8 @@
 #include <stdio.h>
-#include <math.h>
-#include "opcodes.h"
 #include "exec.h"
 
-unsigned int get_hex_from_char(char c) {
-    unsigned int hex_val;
+int get_hex_from_char(char c) {
+    int hex_val;
     if (c-'0' >= 0 && c-'0' <= 9) {
         hex_val = c-'0';
     } else if (c-'a' >= 0 && c-'f' <= 0) {
@@ -16,14 +14,14 @@ unsigned int get_hex_from_char(char c) {
     return hex_val;
 }
 
-unsigned int get_hex_from_chars(char *c) {
-    unsigned int hex_val = 0, length;
+int get_hex_from_chars(char *c) {
+    int hex_val = 0, length;
     for (int i = 0; c[i] != '\0' && c[i] != ' ' && c[i] != '\n'; i++)
         hex_val = get_hex_from_char(c[i]) + (hex_val << 4);
     return hex_val;
 }
 
-int16_t load_program(int argc, char **argv, uint8_t *mem, int16_t start) {
+int16_t load_program(int argc, char **argv, int8_t *mem, int16_t start) {
     /*
      * Reads the specified hex dump file and loads it into memory
      * mem should have allocated 0xFFFF entries of 1 byte of memory
@@ -47,7 +45,7 @@ int16_t load_program(int argc, char **argv, uint8_t *mem, int16_t start) {
     }
 
     int16_t pc;
-    uint8_t hex_val;
+    int8_t hex_val;
     // records how far into scan buffer the scanner is in
     unsigned int bufc = 0;
     char scan_buf[6], val;
@@ -61,7 +59,7 @@ int16_t load_program(int argc, char **argv, uint8_t *mem, int16_t start) {
         }
         scan_buf[bufc] = '\0';
         if (bufc && scan_buf[bufc-1] != ':')
-            mem[pc++] = (uint8_t) get_hex_from_chars(scan_buf);
+            mem[pc++] = (int8_t) get_hex_from_chars(scan_buf);
         bufc = 0;
     }
 

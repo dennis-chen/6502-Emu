@@ -1,5 +1,5 @@
-#ifndef EXEC_H
-#define EXEC_H
+#ifndef LOAD_PROG_H
+#define LOAD_PROG_H
 
 #define int8_t  __int8_t
 #define int16_t __int16_t
