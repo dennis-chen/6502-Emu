@@ -86,7 +86,7 @@
 #define STX_ZPY     0x96
 #define STX_AB      0x8E
 
-#define TAY         0xAB
+#define TAY         0xA8
 
 #define TYA         0x98
 
