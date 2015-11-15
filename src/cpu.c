@@ -272,13 +272,11 @@ void BEQ(CPU *c, OP_CODE_INFO *o){
 
 // Test bits in memory with accumulator
 void BIT(CPU *c, OP_CODE_INFO *o){
-
     int8_t src = o->operand;
     int8_t accum = getRegByte(c, ACCUM);
-
-    setFlag(c, V, (src & 0x40)); // get 6th bit of src
-    setFlag(c, S, src); // get 7th bit of src
-    setFlag(c, Z, (src & accum));
+    setFlag(c, V, (src & 0x40) ? 1 : 0); // get 6th bit of src
+    setFlag(c, S, (src & 0x80) ? 1 : 0); // get 7th bit of src
+    setFlag(c, Z, (src & accum) ? 0 : 1);
 }
 
 // Branch if result minus

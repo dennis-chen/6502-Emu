@@ -199,7 +199,7 @@ static char * BNE2() {
     OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
     setFlag(c,Z,1);
     BNE(c,o);
-    mu_assert("BNE1 err, PC != 0", c->PC == 0);
+    mu_assert("BNE2 err, PC != 0", c->PC == 0);
     freeOP_CODE_INFO(o);
     free(c);
     return 0;
@@ -223,7 +223,105 @@ static char * BPL2() {
     OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
     setFlag(c,S,1);
     BPL(c,o);
-    mu_assert("BPL1 err, PC != 0", c->PC == 0);
+    mu_assert("BPL2 err, PC != 0", c->PC == 0);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * BCC1() {
+    CPU *c = getCPU();
+    uint16_t address = 0x8FFE;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setFlag(c,C,0);
+    BCC(c,o);
+    mu_assert("BCC1 err, PC != 0x8FFE", c->PC == 0x8FFE);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * BCC2() {
+    CPU *c = getCPU();
+    uint16_t address = 0xFFFF;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setFlag(c,C,1);
+    BCC(c,o);
+    mu_assert("BCC2 err, PC != 0", c->PC == 0);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * BCS1() {
+    CPU *c = getCPU();
+    uint16_t address = 0x8FFE;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setFlag(c,C,1);
+    BCS(c,o);
+    mu_assert("BCS1 err, PC != 0x8FFE", c->PC == 0x8FFE);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * BCS2() {
+    CPU *c = getCPU();
+    uint16_t address = 0x8FFE;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setFlag(c,C,0);
+    BCS(c,o);
+    mu_assert("BCS2 err, PC != 0", c->PC == 0);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * BEQ1() {
+    CPU *c = getCPU();
+    uint16_t address = 0x8FFE;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setFlag(c,Z,1);
+    BEQ(c,o);
+    mu_assert("BEQ1 err, PC != 0x8FFE", c->PC == 0x8FFE);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * BEQ2() {
+    CPU *c = getCPU();
+    uint16_t address = 0x1111;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setFlag(c,Z,0);
+    BEQ(c,o);
+    mu_assert("BEQ2 err, PC != 0", c->PC == 0);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * BIT1() {
+    CPU *c = getCPU();
+    int8_t operand = 0xC0;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    setRegByte(c,ACCUM,0);
+    BIT(c,o);
+    mu_run_test_with_args(testRegStatus,c,"11100010",
+            "          NVUBDIZC    NVUBDIZC\nBIT1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * BIT2() {
+    CPU *c = getCPU();
+    int8_t operand = 0x01;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    setRegByte(c,ACCUM,1);
+    BIT(c,o);
+    mu_run_test_with_args(testRegStatus,c,"00100000",
+            "          NVUBDIZC    NVUBDIZC\nBIT2 err, %s != %s");
     freeOP_CODE_INFO(o);
     free(c);
     return 0;
@@ -543,10 +641,18 @@ static char * all_tests() {
     mu_run_test(AND2);
     mu_run_test(ASL1);
     mu_run_test(ASL2);
+    mu_run_test(BCC1);
+    mu_run_test(BCC2);
+    mu_run_test(BCS1);
+    mu_run_test(BCS2);
+    mu_run_test(BEQ1);
+    mu_run_test(BEQ2);
     mu_run_test(BNE1);
     mu_run_test(BNE2);
     mu_run_test(BPL1);
     mu_run_test(BPL2);
+    mu_run_test(BIT1);
+    mu_run_test(BIT2);
     mu_run_test(CLC1);
     mu_run_test(DEY1);
     mu_run_test(DEY2);
