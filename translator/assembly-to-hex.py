@@ -80,45 +80,47 @@ for line in file:
     commentStart = line.find(';')
     if (commentStart != -1):
         line = line[0:commentStart]
-    line = line.rstrip()
-    splitLine = line.split(' ')
-    arguments = len(splitLine)
-    processedLines.append({'data': splitLine, 'length': arguments, 'bytePosition': bytePosition})
-
-    # we have a label AND an opcode AND an address on this line
-    if (arguments == 3 and splitLine[0].endswith(':')):
-        # remove colon before adding it to labels
-        labels[splitLine[0][:-1]] = bytePosition
-        if (twoByteAddress.search(splitLine[2])):
-            bytePosition += 3
-        else:
-            bytePosition += 2
-
-    elif (arguments == 2):
-        # label and implicitly addressed opcode
-        if (splitLine[0].endswith(':')):
+    line = line.strip()
+    if (line):
+        splitLine = line.split(' ')
+        arguments = len(splitLine)
+        processedLines.append({'data': splitLine, 'length': arguments, 'bytePosition': bytePosition})
+        print(splitLine)
+        # we have a label AND an opcode AND an address on this line
+        if (arguments == 3 and splitLine[0].endswith(':')):
             # remove colon before adding it to labels
             labels[splitLine[0][:-1]] = bytePosition
-            bytePosition += 1
-        # opcode and address
-        else:
-            if (twoByteAddress.search(splitLine[1])):
+            if (twoByteAddress.search(splitLine[2])):
                 bytePosition += 3
             else:
                 bytePosition += 2
 
-    elif (arguments == 1):
-        # just a label
-        if (splitLine[0].endswith(':')):
-            # remove colon before adding it to labels
-            labels[splitLine[0][:-1]] = bytePosition
-        # just an implicitly addressed opcode
-        else:
-            bytePosition += 1
+        elif (arguments == 2):
+            # label and implicitly addressed opcode
+            if (splitLine[0].endswith(':')):
+                # remove colon before adding it to labels
+                labels[splitLine[0][:-1]] = bytePosition
+                bytePosition += 1
+            # opcode and address
+            else:
+                if (twoByteAddress.search(splitLine[1])):
+                    bytePosition += 3
+                else:
+                    bytePosition += 2
 
+        elif (arguments == 1):
+            # just a label
+            if (splitLine[0].endswith(':')):
+                # remove colon before adding it to labels
+                labels[splitLine[0][:-1]] = bytePosition
+            # just an implicitly addressed opcode
+            else:
+                bytePosition += 1
+        else:
+            continue
+print(labels)
 bytePosition = 0
 hexOutput = ""
-
 # loop to actually convert
 for line in processedLines:
     # take the labels out of lines
@@ -133,7 +135,6 @@ for line in processedLines:
         if (line['length']) == 2:
             address = line['data'][1]
 
-        print(line)
         if (opcode in opcodes.keys()):
             # implicit
             if (line['length'] == 1):
@@ -179,7 +180,7 @@ for line in processedLines:
                         hexOutput += opcodes[opcode]['ABS'] + ' ' + address[3:] + ' ' + address[1:3] + ' '
                 elif (address in labels.keys()):
                     # relative addressing with label
-                    byteDiff = labels[address] - line['bytePosition'] - 1
+                    byteDiff = labels[address] - line['bytePosition'] - 2 # subtract one to 
                     print(opcodes[opcode]['BRA'] + ' ' + toHex(byteDiff, 8)[2:])
                     hexOutput += opcodes[opcode]['BRA'] + ' ' + toHex(byteDiff, 8)[2:] + ' '
                 else:
