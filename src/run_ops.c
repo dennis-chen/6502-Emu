@@ -1,26 +1,26 @@
 #include <stdio.h>
 #include "opcodes.h"
 #include "load_prog.h"
+#include "cpu.h"
 
-void check_op(CPU *c, int16_t start, int16_t end) {
-    int16_t pc = start;
-    while (pc <= end) {
-        //printf("%x\n", mem[pc]);
-        switch (mem[pc] & 0xFF) {
+void check_op(CPU *c, int16_t end) {
+    while (c->PC <= end) {
+        //printf("%x\n", c->addressSpace[PC]);
+        switch (c->addressSpace[c->PC] & 0xFF) {
             case ADC_IMM:
-                printf("adc imm %x\n", mem[++pc]);
+                printf("adc imm %x\n", c->addressSpace[++(c->PC)]);
                 break;
             case ADC_ZP:
                 printf("adc zp\n");
                 break;
             case LDX_IMM:
-                printf("ldx imm %x\n", mem[++pc]);
+                printf("ldx imm %x\n", c->addressSpace[++(c->PC)]);
                 break;
             case STX_ZP:
-                printf("stx zp %x\n", mem[++pc]);
+                printf("stx zp %x\n", c->addressSpace[++(c->PC)]);
                 break;
             case LDY_IMM:
-                printf("ldy imm %x\n", mem[++pc]);
+                printf("ldy imm %x\n", c->addressSpace[++(c->PC)]);
                 break;
             case SEC:
                 printf("SEC\n");
@@ -53,21 +53,20 @@ void check_op(CPU *c, int16_t start, int16_t end) {
                 printf("op code probably not declared yet\n");
                 break;
         }
-        pc++;
+        (c->PC)++;
     }
 }
 
 
 int main(int argc, char **argv) {
-    int8_t mem[0xffff];
-    int16_t start = 0x60;
-    int16_t end = load_program(argc, argv, mem, start);
-    if (start == end)
+    CPU *c = getCPU();
+    int16_t end = load_program(argc, argv, c->addressSpace, c->PC);
+    if (c->PC == end)
         return 1;
 
     //for (int i = start; i < end; i++)
-        //check_op(mem[i]);
-    check_op(mem, start, end);
+        //check_op(c->addressSpace[i]);
+    check_op(c, end);
     printf("\n");
 
     return 0;

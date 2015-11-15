@@ -6,7 +6,7 @@ int tests_run = 0;
 int8_t testADCHelper(CPU *c, int8_t accumByte, int8_t operand){
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
     setRegByte(c,ACCUM,accumByte);
-    ADC(c,o);
+    adc(c,o);
     freeOP_CODE_INFO(o);
     return getRegByte(c,ACCUM);
 }
@@ -14,7 +14,7 @@ int8_t testADCHelper(CPU *c, int8_t accumByte, int8_t operand){
 int8_t testSBCHelper(CPU *c, int8_t accumByte, int8_t operand){
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
     setRegByte(c,ACCUM,accumByte);
-    SBC(c,o);
+    sbc(c,o);
     freeOP_CODE_INFO(o);
     return getRegByte(c,ACCUM);
 }
@@ -122,7 +122,7 @@ static char * AND1() {
     int8_t accum = 0xFF;
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
     setRegByte(c,ACCUM,accum);
-    AND(c,o);
+    and(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("AND1 err, ACCUM reg != 0", accumVal == 0);
     mu_run_test_with_args(testRegStatus,c,"00100010",
@@ -139,7 +139,7 @@ static char * AND2() {
     int8_t accum = 0xF1;
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
     setRegByte(c,ACCUM,accum);
-    AND(c,o);
+    and(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("AND2 err, ACCUM reg != -127", accumVal == -127);
     mu_run_test_with_args(testRegStatus,c,"10100000",
@@ -171,7 +171,7 @@ static char * ASL2() {
     CPU *c = getCPU();
     int8_t operand = 0xFF;
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
-    ASL(c,o);
+    asl(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("ASL2 err, ACCUM reg != 0", accumVal == 0);
     mu_run_test_with_args(testRegStatus,c,"10100001",
@@ -186,7 +186,7 @@ static char * BNE1() {
     uint16_t address = 0x8FFE;
     OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
     setFlag(c,Z,0);
-    BNE(c,o);
+    bne(c,o);
     mu_assert("BNE1 err, PC != 0x8FFE", c->PC == 0x8FFE);
     freeOP_CODE_INFO(o);
     free(c);
@@ -198,7 +198,7 @@ static char * BNE2() {
     uint16_t address = 0xFFFF;
     OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
     setFlag(c,Z,1);
-    BNE(c,o);
+    bne(c,o);
     mu_assert("BNE1 err, PC != 0", c->PC == 0);
     freeOP_CODE_INFO(o);
     free(c);
@@ -211,7 +211,7 @@ static char * CLC1() {
     setFlag(c,C,1);
     mu_run_test_with_args(testRegStatus,c,"00100001",
             "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
-    CLC(c,o);
+    clc(c,o);
     mu_run_test_with_args(testRegStatus,c,"00100000",
             "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
     freeOP_CODE_INFO(o);
@@ -225,7 +225,7 @@ static char * DEY1() {
     CPU *c = getCPU();
     OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
     setRegByte(c,IND_Y,-34);
-    DEY(c,o);
+    dey(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
     mu_assert("DEY1 err, IND_Y reg != -35", yVal == -35);
     mu_run_test_with_args(testRegStatus,c,"10100000",
@@ -241,7 +241,7 @@ static char * DEY2() {
     CPU *c = getCPU();
     OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
     setRegByte(c,IND_Y,1);
-    DEY(c,o);
+    dey(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
     mu_assert("DEY2 err, IND_Y reg != 0", yVal == 0);
     mu_run_test_with_args(testRegStatus,c,"00100010",
@@ -257,7 +257,7 @@ static char * DEY3() {
     CPU *c = getCPU();
     OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
     setRegByte(c,IND_Y,0);
-    DEY(c,o);
+    dey(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
     mu_assert("DEY3 err, IND_Y reg != -1", yVal == -1);
     mu_run_test_with_args(testRegStatus,c,"10100000",
@@ -273,7 +273,7 @@ static char * LDA1() {
     int8_t operand = 0x00;
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
     setRegByte(c,ACCUM,10);
-    LDA(c,o);
+    lda(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("LDA1 err, ACCUM reg != 0", accumVal == 0);
     mu_run_test_with_args(testRegStatus,c,"00100010",
@@ -288,7 +288,7 @@ static char * LDA2() {
     CPU *c = getCPU();
     int8_t operand = -99;
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
-    LDA(c,o);
+    lda(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("LDA2 err, ACCUM reg != -99", accumVal == -99);
     mu_run_test_with_args(testRegStatus,c,"10100000",
@@ -304,7 +304,7 @@ static char * LDX1() {
     int8_t operand = 0x00;
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
     setRegByte(c,ACCUM,10);
-    LDX(c,o);
+    ldx(c,o);
     int8_t xVal = getRegByte(c,IND_X);
     mu_assert("LDX1 err, ACCUM reg != 0", xVal == 0);
     mu_run_test_with_args(testRegStatus,c,"00100010",
@@ -319,7 +319,7 @@ static char * LDX2() {
     CPU *c = getCPU();
     int8_t operand = -99;
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
-    LDX(c,o);
+    ldx(c,o);
     int8_t xVal = getRegByte(c,IND_X);
     mu_assert("LDX2 err, ACCUM reg != -99", xVal == -99);
     mu_run_test_with_args(testRegStatus,c,"10100000",
@@ -350,7 +350,7 @@ static char * LDY2() {
     CPU *c = getCPU();
     int8_t operand = -99;
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
-    LDY(c,o);
+    ldy(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
     mu_assert("LDY2 err, ACCUM reg != -99", yVal == -99);
     mu_run_test_with_args(testRegStatus,c,"10100000",
@@ -451,7 +451,7 @@ static char * SBC7() {
 static char * SEC1() {
     CPU *c = getCPU();
     OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
-    SEC(c,o);
+    sec(c,o);
     mu_assert("SEC1 err, Carry flag != 1", getFlag(c,C) == 1);
     freeOP_CODE_INFO(o);
     free(c);
@@ -462,7 +462,7 @@ static char * TAY1() {
     CPU *c = getCPU();
     OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
     setRegByte(c,ACCUM,-1);
-    TAY(c,o);
+    tay(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
     mu_assert("TAY1 err, Y reg != 0xFE", yVal == -1);
     freeOP_CODE_INFO(o);
@@ -474,7 +474,7 @@ static char * TYA1() {
     CPU *c = getCPU();
     OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
     setRegByte(c,IND_Y,-39);
-    TYA(c,o);
+    tya(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("TYA1 err, ACCUM reg != 0xFE", accumVal == -39);
     freeOP_CODE_INFO(o);
@@ -487,7 +487,7 @@ static char * STA1() {
     uint16_t address = 0xFFEE;
     OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
     setRegByte(c,ACCUM,-39);
-    STA(c,o);
+    sta(c,o);
     int8_t addrVal = read(c,address);
     mu_assert("STA1 err, address at 0xFFEE != -39", addrVal == -39);
     freeOP_CODE_INFO(o);
@@ -500,7 +500,7 @@ static char * STX1() {
     uint16_t address = 0xFFEE;
     OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
     setRegByte(c,IND_X,-39);
-    STX(c,o);
+    stx(c,o);
     int8_t addrVal = read(c,address);
     mu_assert("STX1 err, address at 0xFFEE != -39", addrVal == -39);
     freeOP_CODE_INFO(o);
