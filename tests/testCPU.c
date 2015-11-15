@@ -448,6 +448,40 @@ static char * SBC7() {
     return 0;
 }
 
+static char * SEC1() {
+    CPU *c = getCPU();
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    SEC(c,o);
+    mu_assert("SEC1 err, Carry flag != 1", getFlag(c,C) == 1);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * TAY1() {
+    CPU *c = getCPU();
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    setRegByte(c,ACCUM,-1);
+    TAY(c,o);
+    int8_t yVal = getRegByte(c,IND_Y);
+    mu_assert("TAY1 err, Y reg != 0xFE", yVal == -1);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * TYA1() {
+    CPU *c = getCPU();
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    setRegByte(c,IND_Y,-39);
+    TYA(c,o);
+    int8_t accumVal = getRegByte(c,ACCUM);
+    mu_assert("TYA1 err, ACCUM reg != 0xFE", accumVal == -39);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
 static char * all_tests() {
     mu_run_test(ADC1);
     mu_run_test(ADC2);
@@ -478,6 +512,9 @@ static char * all_tests() {
     mu_run_test(SBC5);
     mu_run_test(SBC6);
     mu_run_test(SBC7);
+    mu_run_test(SEC1);
+    mu_run_test(TAY1);
+    mu_run_test(TYA1);
     return 0;
 }
 
