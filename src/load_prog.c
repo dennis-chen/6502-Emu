@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "exec.h"
+#include "load_prog.h"
 
 int get_hex_from_char(char c) {
     int hex_val;

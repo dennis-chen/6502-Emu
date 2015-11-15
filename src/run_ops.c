@@ -2,10 +2,11 @@
 #include "opcodes.h"
 #include "load_prog.h"
 
-void check_op(int8_t *mem, int16_t start, int16_t end) {
+void check_op(CPU *c, int16_t start, int16_t end) {
     int16_t pc = start;
     while (pc <= end) {
-        switch (mem[pc]) {
+        //printf("%x\n", mem[pc]);
+        switch (mem[pc] & 0xFF) {
             case ADC_IMM:
                 printf("adc imm %x\n", mem[++pc]);
                 break;

@@ -1,3 +1,6 @@
+#ifndef CPU_H
+#define CPU_H
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,3 +107,5 @@ OP_CODE_INFO *getOP_CODE_INFO(int8_t operand, int16_t address, MODE mode);
 void freeOP_CODE_INFO(OP_CODE_INFO *o);
 void setRegBit(CPU *c,REG name,int8_t bit,int8_t val);
 int8_t getRegBit(CPU *c,REG name,int8_t bit);
+
+#endif
