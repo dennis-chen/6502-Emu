@@ -4,8 +4,8 @@
 	gcc -c ../tests/testCPU.c -o ../bin/testCPU.o
 ../bin/testCPU: ../bin/cpu.o ../bin/testCPU.o
 	gcc ../bin/cpu.o ../bin/testCPU.o  -o ../bin/testCPU
-../bin/run_ops: ../bin/run_ops.o ../bin/load_prog.o
-	gcc -o ../bin/run_ops ../bin/run_ops.o ../bin/load_prog.o
+../bin/run_ops: ../bin/run_ops.o ../bin/load_prog.o ../bin/cpu.o
+	gcc -o ../bin/run_ops ../bin/run_ops.o ../bin/load_prog.o ../bin/cpu.o
 ../bin/run_ops.o: ../src/run_ops.c ../src/opcodes.h ../src/load_prog.h
 	gcc -c ../src/run_ops.c -o ../bin/run_ops.o
 ../bin/load_prog.o: ../src/load_prog.c ../src/load_prog.h
