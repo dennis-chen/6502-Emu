@@ -67,6 +67,7 @@ void CLV(CPU *c,__attribute__((unused))OP_CODE_INFO *o);
 void CLI(CPU *c,__attribute__((unused))OP_CODE_INFO *o);
 void CLD(CPU *c,__attribute__((unused))OP_CODE_INFO *o);
 void CLC(CPU *c,__attribute__((unused))OP_CODE_INFO *o);
+void DEY(CPU *c, OP_CODE_INFO *o);
 void BVS(CPU *c,OP_CODE_INFO *o);
 void BVC(CPU *c,OP_CODE_INFO *o);
 void BPL(CPU *c,OP_CODE_INFO *o);

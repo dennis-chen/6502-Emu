@@ -114,11 +114,11 @@ static char * AND1() {
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
     setRegByte(c,ACCUM,accum);
     AND(c,o);
-    freeOP_CODE_INFO(o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("AND1 err, ACCUM reg != 0", accumVal == 0);
     mu_run_test_with_args(testRegStatus,c,"00100010",
-            "AND1 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nAND1 err, %s != %s");
+    freeOP_CODE_INFO(o);
     free(c);
     return 0;
 }
@@ -131,11 +131,11 @@ static char * AND2() {
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
     setRegByte(c,ACCUM,accum);
     AND(c,o);
-    freeOP_CODE_INFO(o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("AND2 err, ACCUM reg != -127", accumVal == -127);
     mu_run_test_with_args(testRegStatus,c,"10100000",
-            "AND2 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nAND2 err, %s != %s");
+    freeOP_CODE_INFO(o);
     free(c);
     return 0;
 }
@@ -146,11 +146,11 @@ static char * ASL1() {
     int8_t operand = 0xFF;
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Accumulator);
     ASL(c,o);
-    freeOP_CODE_INFO(o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("ASL1 err, ACCUM reg != -2", accumVal == -2);
     mu_run_test_with_args(testRegStatus,c,"10100001",
-            "ASL1 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nASL1 err, %s != %s");
+    freeOP_CODE_INFO(o);
     free(c);
     return 0;
 }
@@ -163,11 +163,11 @@ static char * ASL2() {
     int8_t operand = 0xFF;
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
     ASL(c,o);
-    freeOP_CODE_INFO(o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("ASL2 err, ACCUM reg != 0", accumVal == 0);
     mu_run_test_with_args(testRegStatus,c,"10100001",
-            "ASL2 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nASL2 err, %s != %s");
+    freeOP_CODE_INFO(o);
     free(c);
     return 0;
 }
@@ -178,8 +178,8 @@ static char * BNE1() {
     OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
     setFlag(c,Z,0);
     BNE(c,o);
-    freeOP_CODE_INFO(o);
     mu_assert("BNE1 err, PC != 0x8FFE", c->PC == 0x8FFE);
+    freeOP_CODE_INFO(o);
     free(c);
     return 0;
 }
@@ -190,8 +190,101 @@ static char * BNE2() {
     OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
     setFlag(c,Z,1);
     BNE(c,o);
-    freeOP_CODE_INFO(o);
     mu_assert("BNE1 err, PC != 0", c->PC == 0);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * CLC1() {
+    CPU *c = getCPU();
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    setFlag(c,C,1);
+    mu_run_test_with_args(testRegStatus,c,"00100001",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    CLC(c,o);
+    mu_run_test_with_args(testRegStatus,c,"00100000",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * DEY1() {
+    //decrement Y reg by 1 with neg twos complement val
+    //in Y reg
+    CPU *c = getCPU();
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    setRegByte(c,IND_Y,-34);
+    DEY(c,o);
+    int8_t yVal = getRegByte(c,IND_Y);
+    mu_assert("DEY1 err, IND_Y reg != -35", yVal == -35);
+    mu_run_test_with_args(testRegStatus,c,"10100000",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * DEY2() {
+    //decrement Y reg by 1 with positive twos complement val
+    //in Y reg
+    CPU *c = getCPU();
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    setRegByte(c,IND_Y,1);
+    DEY(c,o);
+    int8_t yVal = getRegByte(c,IND_Y);
+    mu_assert("DEY2 err, IND_Y reg != 0", yVal == 0);
+    mu_run_test_with_args(testRegStatus,c,"00100010",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * DEY3() {
+    //decrement Y reg by 1 with zero
+    //in Y reg
+    CPU *c = getCPU();
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    setRegByte(c,IND_Y,0);
+    DEY(c,o);
+    int8_t yVal = getRegByte(c,IND_Y);
+    mu_assert("DEY3 err, IND_Y reg != -1", yVal == -1);
+    mu_run_test_with_args(testRegStatus,c,"10100000",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * LDA1() {
+    //load zero val into accumulator
+    CPU *c = getCPU();
+    int8_t operand = 0x00;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    setRegByte(c,ACCUM,10);
+    LDA(c,o);
+    int8_t accumVal = getRegByte(c,ACCUM);
+    mu_assert("LDA1 err, ACCUM reg != 0", accumVal == 0);
+    mu_run_test_with_args(testRegStatus,c,"00100010",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * LDA2() {
+    //load neg val into accumulator
+    CPU *c = getCPU();
+    int8_t operand = -99;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    LDA(c,o);
+    int8_t accumVal = getRegByte(c,ACCUM);
+    mu_assert("LDA2 err, ACCUM reg != -99", accumVal == -99);
+    mu_run_test_with_args(testRegStatus,c,"10100000",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    freeOP_CODE_INFO(o);
     free(c);
     return 0;
 }
@@ -209,6 +302,12 @@ static char * all_tests() {
     mu_run_test(ASL2);
     mu_run_test(BNE1);
     mu_run_test(BNE2);
+    mu_run_test(CLC1);
+    mu_run_test(DEY1);
+    mu_run_test(DEY2);
+    mu_run_test(DEY3);
+    mu_run_test(LDA1);
+    mu_run_test(LDA2);
     return 0;
 }
 

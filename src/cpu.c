@@ -380,6 +380,15 @@ void CPY(CPU *c, OP_CODE_INFO *o){
     setFlag(c, Z, (src &= 0xff));
 }
 
+//Decrement Y index by 1 (unsigned)
+void DEY(CPU *c, OP_CODE_INFO *o){
+    uint8_t yVal = getRegByte(c, IND_Y);
+    uint8_t res = yVal - 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, IND_Y, res);
+}
+
 //Jump PC to 16 bit operand
 void JMP(CPU *c, OP_CODE_INFO *o){
     c->PC = 0xFFFF&(o->address);
