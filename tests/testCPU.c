@@ -482,6 +482,32 @@ static char * TYA1() {
     return 0;
 }
 
+static char * STA1() {
+    CPU *c = getCPU();
+    uint16_t address = 0xFFEE;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setRegByte(c,ACCUM,-39);
+    STA(c,o);
+    int8_t addrVal = read(c,address);
+    mu_assert("STA1 err, address at 0xFFEE != -39", addrVal == -39);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * STX1() {
+    CPU *c = getCPU();
+    uint16_t address = 0xFFEE;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    setRegByte(c,IND_X,-39);
+    STX(c,o);
+    int8_t addrVal = read(c,address);
+    mu_assert("STX1 err, address at 0xFFEE != -39", addrVal == -39);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
 static char * all_tests() {
     mu_run_test(ADC1);
     mu_run_test(ADC2);
@@ -515,6 +541,8 @@ static char * all_tests() {
     mu_run_test(SEC1);
     mu_run_test(TAY1);
     mu_run_test(TYA1);
+    mu_run_test(STA1);
+    mu_run_test(STX1);
     return 0;
 }
 

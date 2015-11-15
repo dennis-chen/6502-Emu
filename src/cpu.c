@@ -109,10 +109,7 @@ int8_t getFlag(CPU *c, FLAG name){
 }
 
 int8_t read(CPU *c, uint16_t addr){
-    //placeholder code 
-    //TODO: replace this w/ actual implementation
-    int8_t placeholder = c->addressSpace[addr];
-    return placeholder;
+    return c->addressSpace[addr];
 }
 
 void write(CPU *c, uint16_t addr, int8_t val){
