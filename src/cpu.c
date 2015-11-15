@@ -210,8 +210,8 @@ void ADC(CPU *c, OP_CODE_INFO *o){
             + carry > 9){
             sum += 6;
         }
-        setSign(c,sumByte);
-        setOverflow(c,accum,operand,sumByte);
+        setSign(c,sum&0xFF);
+        setOverflow(c,accum,operand,sum&0xFF);
         //if the higher bits aren't in
         //BCD format we need to add 96 to convert.
         //Black magic from http://nesdev.com/6502.txt
@@ -475,23 +475,23 @@ void PLP(CPU *c, OP_CODE_INFO *o){
 
 // Subtract operand from accumulator with borrow
 void SBC(CPU *c, OP_CODE_INFO *o){
-    int8_t carry = getFlag(c,C);
+    //we want to subtract the opposite of the carry bit
+    int8_t carry = getFlag(c,C) ? 0 : 1; 
     int8_t accum = getRegByte(c,ACCUM);
     int8_t operand = o->operand;
-    int16_t diff = (0x00FF&accum) - (0x00FF&operand) - (0x00FF&carry);
-    int8_t diffByte = diff & 0x00FF;
-    setSign(c,diffByte);
-    setZero(c,diffByte);
-    setOverflowSubtract(c,accum,operand,diffByte);
+    uint16_t diff = (0x00FF&accum) - (0x00FF&operand) - (0x00FF&carry);
+    setSign(c,diff&0xFF);
+    setZero(c,diff&0xFF);
+    setOverflowSubtract(c,accum,operand,diff&0xFF);
     if(getFlag(c,D)){ //in decimal mode
-        if((accum & 0xF) - carry < (operand & 0xF)){
+        if(((accum & 0xF) - carry) < (operand & 0xF)){
             diff -= 6;
         }
         if(diff > 0x99){
             diff -= 0x60;
         }
     }
-    setFlag(c,C, diff < 0x100 ? 1 : 0);
+    setFlag(c,C, diff < 0x100);
     setRegByte(c,ACCUM,diff&0xFF);
 }
 

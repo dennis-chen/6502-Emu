@@ -3,12 +3,18 @@
 
 int tests_run = 0;
 
-//get opcode info takes operand, address, mode
-
 int8_t testADCHelper(CPU *c, int8_t accumByte, int8_t operand){
     OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
     setRegByte(c,ACCUM,accumByte);
     ADC(c,o);
+    freeOP_CODE_INFO(o);
+    return getRegByte(c,ACCUM);
+}
+
+int8_t testSBCHelper(CPU *c, int8_t accumByte, int8_t operand){
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    setRegByte(c,ACCUM,accumByte);
+    SBC(c,o);
     freeOP_CODE_INFO(o);
     return getRegByte(c,ACCUM);
 }
@@ -47,7 +53,7 @@ static char * ADC2() {
     //adding positive to negative, no overflow, yes carry
     CPU *c = getCPU();
     int8_t accumVal = testADCHelper(c,-39,92);
-    //mu_assert("ADC2 err, ACCUM reg != 53", accumVal == 53);
+    mu_assert("ADC2 err, ACCUM reg != 53", accumVal == 53);
     mu_run_test_with_args(testRegStatus,c,"00100001",
             "          NVUBDIZC    NVUBDIZC\nADC2 err, %s != %s");
     free(c);
@@ -100,6 +106,9 @@ static char * ADC6() {
     //overflow
     accumVal = testADCHelper(c,52,104);
     mu_assert("ADC6 err, ACCUM reg != 2", accumVal == 2);
+    //NEG flag is one here because the zero and neg flags
+    //are set before correction for decimal addition overflow
+    //is done
     mu_run_test_with_args(testRegStatus,c,"11101001",
             "          NVUBDIZC    NVUBDIZC\nADC6 err, %s != %s");
     free(c);
@@ -289,6 +298,156 @@ static char * LDA2() {
     return 0;
 }
 
+static char * LDX1() {
+    //load zero val into x reg
+    CPU *c = getCPU();
+    int8_t operand = 0x00;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    setRegByte(c,ACCUM,10);
+    LDX(c,o);
+    int8_t xVal = getRegByte(c,IND_X);
+    mu_assert("LDX1 err, ACCUM reg != 0", xVal == 0);
+    mu_run_test_with_args(testRegStatus,c,"00100010",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * LDX2() {
+    //load neg val into x reg
+    CPU *c = getCPU();
+    int8_t operand = -99;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    LDX(c,o);
+    int8_t xVal = getRegByte(c,IND_X);
+    mu_assert("LDX2 err, ACCUM reg != -99", xVal == -99);
+    mu_run_test_with_args(testRegStatus,c,"10100000",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * LDY1() {
+    //load zero val into x reg
+    CPU *c = getCPU();
+    int8_t operand = 0x00;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    setRegByte(c,ACCUM,10);
+    LDY(c,o);
+    int8_t yVal = getRegByte(c,IND_Y);
+    mu_assert("LDY1 err, ACCUM reg != 0", yVal == 0);
+    mu_run_test_with_args(testRegStatus,c,"00100010",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * LDY2() {
+    //load neg val into x reg
+    CPU *c = getCPU();
+    int8_t operand = -99;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    LDY(c,o);
+    int8_t yVal = getRegByte(c,IND_Y);
+    mu_assert("LDY2 err, ACCUM reg != -99", yVal == -99);
+    mu_run_test_with_args(testRegStatus,c,"10100000",
+            "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * SBC1() {
+    //pos ACUM, neg operand, no overflow, no carry
+    CPU *c = getCPU();
+    setFlag(c,C,1);
+    int8_t accumVal = testSBCHelper(c,13,-14);
+    mu_assert("SBC1 err, ACCUM reg != 27", accumVal == 27);
+    mu_run_test_with_args(testRegStatus,c,"00100000",
+            "          NVUBDIZC    NVUBDIZC\nSBC1 err, %s != %s");
+    free(c);
+    return 0;
+}
+
+static char * SBC2() {
+    //pos ACUM, neg operand, no overflow, yes carry
+    CPU *c = getCPU();
+    setFlag(c,C,1);
+    int8_t accumVal = testSBCHelper(c,-39,-92);
+    mu_assert("SBC2 err, ACCUM reg != 53", accumVal == 53);
+    mu_run_test_with_args(testRegStatus,c,"00100001",
+            "          NVUBDIZC    NVUBDIZC\nSBC2 err, %s != %s");
+    free(c);
+    return 0;
+}
+
+static char * SBC3() {
+    //pos ACUM, neg operand, yes overflow, no carry
+    CPU *c = getCPU();
+    setFlag(c,C,1);
+    int8_t accumVal = testSBCHelper(c,104,-45);
+    mu_assert("SBC3 err, ACCUM reg != -105", accumVal == -107);
+    mu_run_test_with_args(testRegStatus,c,"11100000",
+            "          NVUBDIZC    NVUBDIZC\nSBC3 err, %s != %s");
+    free(c);
+    return 0;
+}
+
+static char * SBC4() {
+    //neg ACUM, pos operand, yes overflow, yes carry
+    CPU *c = getCPU();
+    setFlag(c,C,1);
+    int8_t accumVal = testSBCHelper(c,-103,69);
+    mu_assert("SBC4 err, ACCUM reg != 84", accumVal == 84);
+    mu_run_test_with_args(testRegStatus,c,"01100001",
+            "          NVUBDIZC    NVUBDIZC\nSBC4 err, %s != %s");
+    free(c);
+    return 0;
+}
+
+static char * SBC5() {
+    //pos ACUM, neg operand, no overflow, carry flag zeroed
+    CPU *c = getCPU();
+    setFlag(c,C,0);
+    int8_t accumVal = testSBCHelper(c,30,-12);
+    mu_assert("SBC5 err, ACCUM reg != 41", accumVal == 41);
+    mu_run_test_with_args(testRegStatus,c,"00100000",
+            "          NVUBDIZC    NVUBDIZC\nSBC5 err, %s != %s");
+    free(c);
+    return 0;
+}
+
+static char * SBC6() {
+    //subtraction in decimal mode
+    CPU *c = getCPU();
+    setFlag(c,D,1);
+    setFlag(c,C,1);
+    //no overflow, 66 - 38 in BCD mode
+    int8_t accumVal = testSBCHelper(c,0x66,0x38);
+    mu_assert("SBC6 err, ACCUM reg != 0x28", accumVal == 0x28);
+    mu_run_test_with_args(testRegStatus,c,"00101001",
+            "          NVUBDIZC    NVUBDIZC\nSBC6 err, %s != %s");
+    free(c);
+    return 0;
+}
+
+static char * SBC7() {
+    //subtraction in decimal mode
+    CPU *c = getCPU();
+    setFlag(c,D,1);
+    setFlag(c,C,1);
+    //no overflow, 93 - 87 in BCD mode
+    int8_t accumVal = testSBCHelper(c,0x93,0x87);
+    mu_assert("SBC7 err, ACCUM reg != 0x06", accumVal == 0x06);
+    mu_run_test_with_args(testRegStatus,c,"00101001",
+            "          NVUBDIZC    NVUBDIZC\nSBC7 err, %s != %s");
+    free(c);
+    return 0;
+}
+
 static char * all_tests() {
     mu_run_test(ADC1);
     mu_run_test(ADC2);
@@ -308,6 +467,17 @@ static char * all_tests() {
     mu_run_test(DEY3);
     mu_run_test(LDA1);
     mu_run_test(LDA2);
+    mu_run_test(LDX1);
+    mu_run_test(LDX2);
+    mu_run_test(LDY1);
+    mu_run_test(LDY2);
+    mu_run_test(SBC1);
+    mu_run_test(SBC2);
+    mu_run_test(SBC3);
+    mu_run_test(SBC4);
+    mu_run_test(SBC5);
+    mu_run_test(SBC6);
+    mu_run_test(SBC7);
     return 0;
 }
 
