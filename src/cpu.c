@@ -1,4 +1,6 @@
 #include "cpu.h"
+#include "opcodes.h"
+#include "load_prog.h"
 
 /* sets a single bit of one of the eight bit 
  * registers on CPU to val */
@@ -56,10 +58,9 @@ void freeCPU(CPU *c){
 /* prints state of CPU registers */
 void print(CPU *c){
     printf("PC: ");
-    printf("%d\n", c->PC);
-    //printf("STATUS REG: ");
-    printf("C, Z, I, D, B, NOT_USED_FLAG, V, S");
-    printf("%d\n", c->regs[STATUS]);
+    printf("%x\n", c->PC);
+    printf("SVUBDIZC\n");
+    printf("%s\n",getStatus(c));
     printf("STACK REG: ");
     printf("%d\n", c->regs[STACK]);
     printf("ACCUM REG: ");
@@ -68,6 +69,21 @@ void print(CPU *c){
     printf("%d\n", c->regs[IND_X]);
     printf("IND_Y REG: ");
     printf("%d\n", c->regs[IND_Y]);
+}
+
+char *getStatus(CPU *c){
+    return byte_to_binary(c->regs[STATUS]);
+}
+
+char *byte_to_binary(int x){
+    char *b = malloc(sizeof(char)*9);
+    b[0] = '\0';
+    int z;
+    for (z = 128; z > 0; z >>= 1)
+    {
+        strcat(b, ((x & z) == z) ? "1" : "0");
+    }
+    return b;
 }
 
 /* set byte value in one of the eight bit 
@@ -80,7 +96,7 @@ int8_t getRegByte(CPU *c, REG name){
     return c->regs[name];
 }
 
-void setFlag(CPU *c, FLAG name, int val){
+void setFlag(CPU *c, FLAG name, int8_t val){
     //bit 5 of the status register is not to be set
     //and should always be 1
     assert(name != NOT_USED_FLAG);
@@ -94,14 +110,11 @@ int8_t getFlag(CPU *c, FLAG name){
     return getRegBit(c, STATUS, name);
 }
 
-int8_t read(CPU *c, int16_t addr){
-    //placeholder code 
-    //TODO: replace this w/ actual implementation
-    int8_t placeholder = c->addressSpace[addr];
-    return placeholder;
+int8_t read(CPU *c, uint16_t addr){
+    return c->addressSpace[addr];
 }
 
-void write(CPU *c, int16_t addr, int8_t val){
+void write(CPU *c, uint16_t addr, int8_t val){
     c->addressSpace[addr] = val;
 }
 
@@ -112,14 +125,14 @@ void setCarry(CPU *c, int16_t val){
     //val > 0b11111111, largest
     //eight bit val
     int8_t carry = val > 0xFF ? 1 : 0;
-    setFlag(c,V,carry);
+    setFlag(c,C,carry);
 }
 
 void setCarryBCD(CPU *c, int16_t val){
     //sets carry flag if
     //val > 0x99, for addition in BCD mode
     int8_t carry = val > 0x99 ? 1 : 0;
-    setFlag(c,V,carry);
+    setFlag(c,C,carry);
 }
 
 void setOverflow(CPU *c, int8_t a, int8_t b, int8_t val){
@@ -128,6 +141,17 @@ void setOverflow(CPU *c, int8_t a, int8_t b, int8_t val){
     //this bit twiddling from:
     //http://nesdev.com/6502.txt
     int8_t overflow = !((a ^ b) & 0x80) && ((a ^ val) & 0x80);
+    //overflow = signs of operands are the same AND
+    //          sign of result not equal to sign of operands
+    setFlag(c,V,overflow);
+}
+
+void setOverflowSubtract(CPU *c, int8_t a, int8_t b, int8_t val){
+    //sets overflow if overflow in twos complement 
+    //occurred when subtracting b from a to get val
+    //this bit twiddling from:
+    //http://nesdev.com/6502.txt
+    int8_t overflow = ((a ^ b) & 0x80) && ((a ^ val) & 0x80);
     //overflow = signs of operands are the same AND
     //          sign of result not equal to sign of operands
     setFlag(c,V,overflow);
@@ -143,11 +167,11 @@ void setSign(CPU *c, int8_t val){
 void setZero(CPU *c, int8_t val){
     //sets zero flag to 0 if val == 0
     //and zero flag to 1 otherwise
-    int8_t isZero = val? 1 : 0 ;
+    int8_t isZero = val? 0 : 1 ;
     setFlag(c,Z,isZero);
 }
 
-OP_CODE_INFO * getOP_CODE_INFO(int8_t operand, int16_t address, MODE mode){
+OP_CODE_INFO * getOP_CODE_INFO(int8_t operand, uint16_t address, MODE mode){
     OP_CODE_INFO *o = malloc(sizeof(OP_CODE_INFO));
     o->operand = operand;
     o->address = address;
@@ -157,6 +181,132 @@ OP_CODE_INFO * getOP_CODE_INFO(int8_t operand, int16_t address, MODE mode){
 
 void freeOP_CODE_INFO(OP_CODE_INFO *o){
     free(o);
+}
+
+/* RUN PROGRAM IN MEMORY */
+void run_ops(CPU *c, int16_t end) {
+    OP_CODE_INFO *op = malloc(sizeof(OP_CODE_INFO));
+    int16_t start = c->PC;
+    int16_t *pc = &(c->PC);
+    print(c);
+    while (c->PC < end){
+        switch (c->addressSpace[*pc] & 0xFF) {
+            case ADC_IMM:
+                op->operand = c->addressSpace[++(*pc)];
+                op->mode = Immediate;
+                adc(c, op);
+                (*pc)++;
+                break;
+
+            case ADC_ZP:
+                op->operand = c->addressSpace[c->addressSpace[++(*pc)]];
+                op->mode = ZeroPageAbsolute;
+                adc(c, op);
+                (*pc)++;
+                break;
+
+            case LDX_IMM:
+                op->operand = c->addressSpace[++(*pc)];
+                op->mode = Immediate;
+                ldx(c, op);
+                (*pc)++;
+                break;
+
+            case STX_ZP:
+                op->address = 0x00FF & c->addressSpace[++(*pc)];
+                op->mode = ZeroPageAbsolute;
+                stx(c, op);
+                (*pc)++;
+                break;
+
+            case LDY_IMM:
+                op->operand = c->addressSpace[++(*pc)];
+                op->mode = Immediate;
+                ldy(c, op);
+                (*pc)++;
+                break;
+
+            case SEC:
+                op->mode = Implied;
+                sec(c, op);
+                (*pc)++;
+                break;
+
+            case TYA:
+                op->mode = Implied;
+                tya(c, op);
+                (*pc)++;
+                break;
+
+            case SBC_IMM:
+                op->mode = Immediate;
+                op->operand = c->addressSpace[++(*pc)];
+                sbc(c, op);
+                (*pc)++;
+                break;
+
+            case TAY:
+                op->mode = Implied;
+                tay(c, op);
+                (*pc)++;
+                break;
+
+            case CLC:
+                op->mode = Implied;
+                clc(c, op);
+                (*pc)++;
+                break;
+
+            case LDA_IMM:
+                op->mode = Immediate;
+                op->operand = c->addressSpace[++(*pc)];
+                lda(c, op);
+                (*pc)++;
+                break;
+
+            case STA_ZP:
+                op->mode = ZeroPageAbsolute;
+                op->address = 0x00FF & c->addressSpace[++(*pc)];
+                sta(c, op);
+                (*pc)++;
+                break;
+
+            case LDX_ZP:
+                op->mode = ZeroPageAbsolute;
+                op->operand = c->addressSpace[0x00FF & c->addressSpace[++(*pc)]];
+                ldx(c, op);
+                (*pc)++;
+                break;
+
+            case DEY:
+                op->mode = Implied;
+                dey(c, op);
+                (*pc)++;
+                break;
+
+            case BNE_REL:
+                op->mode = Relative;
+                (*pc)++;
+                op->address = (int) *pc + (int) c->addressSpace[*pc];
+                bne(c, op);
+                (*pc)++;
+                break;
+
+            case SBC_ZPX:
+                op->mode = ZeroPageIndexed;
+                op->operand = c->addressSpace[getRegByte(c, IND_X)+c->addressSpace[++(*pc)]];
+                sbc(c, op);
+                (*pc)++;
+                break;
+
+            default:
+                printf("op code probably not declared yet\n");
+                (*pc)++;
+                break;
+        }
+    }
+    printf("\n");
+    print(c);
 }
 
 /* STACK OPERATIONS HERE */
@@ -169,12 +319,13 @@ void PUSH( __attribute__ ((unused)) CPU *c,
 /* OP CODE IMPLEMENTATIONS HERE */
 
 //Add with carry
-void ADC(CPU *c, OP_CODE_INFO *o){
+void adc(CPU *c, OP_CODE_INFO *o){
     int8_t carry = getFlag(c,C);
     int8_t accum = getRegByte(c,ACCUM);
     int8_t operand = o->operand;
-    int16_t sum = carry + accum + operand;
-    setZero(c,sum);
+    int16_t sum = (0x00FF&carry) + (0x00FF&accum) + (0x00FF&operand);
+    int8_t sumByte = sum & 0x00FF;
+    setZero(c,sumByte);
     if(getFlag(c,D)){ //in decimal mode
         //if lower 4 bits of operands plus
         //the carry in are larger than 9,
@@ -184,22 +335,22 @@ void ADC(CPU *c, OP_CODE_INFO *o){
             + carry > 9){
             sum += 6;
         }
-        setSign(c,sum);
-        setOverflow(c,accum,operand,sum);
+        setSign(c,sum&0xFF);
+        setOverflow(c,accum,operand,sum&0xFF);
         //if the higher bits aren't in
         //BCD format we need to add 96 to convert.
         //Black magic from http://nesdev.com/6502.txt
         sum += sum > 0x99 ? 96 : 0;
         setCarryBCD(c, sum);
     } else {
-        setSign(c,sum);
-        setOverflow(c,accum,operand,sum);
+        setSign(c,sumByte);
+        setOverflow(c,accum,operand,sumByte);
         setCarry(c,sum);
     }
-    setRegByte(c,ACCUM,sum);
+    setRegByte(c,ACCUM,sum&0xFF);
 }
 
-void AND(CPU *c, OP_CODE_INFO *o){
+void and(CPU *c, OP_CODE_INFO *o){
     int8_t accum = getRegByte(c,ACCUM);
     int8_t operand = o->operand;
     int8_t res = accum & operand;
@@ -209,12 +360,13 @@ void AND(CPU *c, OP_CODE_INFO *o){
 }
 
 //Arithmetic shift left
-void ASL(CPU *c, OP_CODE_INFO *o){
+void asl(CPU *c, OP_CODE_INFO *o){
     int8_t operand = o->operand;
-    int16_t res = operand << 1;
+    int16_t res = (0x00FF&operand) << 1;
+    int8_t resByte = res & 0x00FF;
     setCarry(c,res);
-    setSign(c,res);
-    setZero(c,res);
+    setSign(c,resByte);
+    setZero(c,resByte);
     if(o->mode == Accumulator){
         setRegByte(c,ACCUM,res);
     } else {
@@ -223,67 +375,65 @@ void ASL(CPU *c, OP_CODE_INFO *o){
 }
 
 //Branch if carry clear
-void BCC(CPU *c, OP_CODE_INFO *o){
+void bcc(CPU *c, OP_CODE_INFO *o){
     if(!getFlag(c,C)){
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
 
 //Branch if carry set
-void BCS(CPU *c, OP_CODE_INFO *o){
+void bcs(CPU *c, OP_CODE_INFO *o){
     if(getFlag(c,C)){
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
 
 //Branch if equals
-void BEQ(CPU *c, OP_CODE_INFO *o){
+void beq(CPU *c, OP_CODE_INFO *o){
     if(getFlag(c,Z)){
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
 
 // Test bits in memory with accumulator
-void BIT(CPU *c, OP_CODE_INFO *o){
-
+void bit(CPU *c, OP_CODE_INFO *o){
     int8_t src = o->operand;
     int8_t accum = getRegByte(c, ACCUM);
-
-    setFlag(c, V, (src & 0x40)); // get 6th bit of src
-    setFlag(c, S, src); // get 7th bit of src
-    setFlag(c, Z, (src & accum));
+    setFlag(c, V, (src & 0x40) ? 1 : 0); // get 6th bit of src
+    setFlag(c, S, (src & 0x80) ? 1 : 0); // get 7th bit of src
+    setFlag(c, Z, (src & accum) ? 0 : 1);
 }
 
 // Branch if result minus
-void BMI(CPU *c, OP_CODE_INFO *o){
+void bmi(CPU *c, OP_CODE_INFO *o){
     if (getFlag(c, S)) {
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
 
 // Branch if not equals
-void BNE(CPU *c, OP_CODE_INFO *o){
+void bne(CPU *c, OP_CODE_INFO *o){
     if(!(getFlag(c,Z))){
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
 
 // Branch if result plus
-void BPL(CPU *c, OP_CODE_INFO *o){
+void bpl(CPU *c, OP_CODE_INFO *o){
     if(!(getFlag(c,S))){
-        c->PC = o->operand;
+        c->PC = o->address;
         //TODO: cpu add branch cycles here
     }
 }
 
 // TODO BRK
 // Force Break
-void BRK(CPU *c, OP_CODE_INFO *o){
+void brk(CPU *c, OP_CODE_INFO *o){
     (c->PC)++; // this could be between 0 and 3.
     PUSH(c, o, (c->PC >> 8) & 0xff); // Push return address onto the stack.
     PUSH(c, o, c->PC & 0xff); // (push Program Counter AND 0xFF)
@@ -294,7 +444,7 @@ void BRK(CPU *c, OP_CODE_INFO *o){
 }
 
 // Branch if overflow clear
-void BVC(CPU *c, OP_CODE_INFO *o){
+void bvc(CPU *c, OP_CODE_INFO *o){
     if (!(getFlag(c, V))){
         c->PC = o->address;
         //TODO: add clk cycles here
@@ -302,7 +452,7 @@ void BVC(CPU *c, OP_CODE_INFO *o){
 }
 
 //Branch on overflow set
-void BVS(CPU *c, OP_CODE_INFO *o){
+void bvs(CPU *c, OP_CODE_INFO *o){
     if (getFlag(c, V)){
         c->PC = o->address;
         //TODO: add clk cycles here
@@ -310,56 +460,113 @@ void BVS(CPU *c, OP_CODE_INFO *o){
 }
 
 //Clear carry flag
-void CLC(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
+void clc(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
     setFlag(c, C, 0);
 }
 
 //Clear decimal mode
-void CLD(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
+void cld(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
     setFlag(c, D, 0);
 }
 
 //Clear interrupt disable bit
-void CLI(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
+void cli(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
     setFlag(c, I, 0);
 }
 
 //Clear overflow flag
-void CLV(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
+void clv(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
     setFlag(c, V, 0);
 }
 
 //Compare memory and accumulator
-void CMP(CPU *c, OP_CODE_INFO *o){
-    int8_t src = getRegByte(c, ACCUM) - o->address;
-    setFlag(c, C, src < 0x100);
-    setFlag(c, S, (src & 0x40));    // get 7th bit of src
-    setFlag(c, Z, (src &= 0xff));
+void cmp(CPU *c, OP_CODE_INFO *o){
+    int8_t accum = getRegByte(c,ACCUM);
+    int8_t operand = o->operand;
+    int8_t diff = accum-operand;
+    //longdiff is used to calculate whether a carry occurred
+    uint16_t longDiff = (0x00FF&accum) - (0x00FF&operand);
+    setFlag(c, C, longDiff < 0x100);
+    setFlag(c, S, (diff & 0x80) ? 1 : 0);    // get 7th bit of src
+    setFlag(c, Z, diff ? 0 : 1);
 }
 
 //Compare memory and index x
-void CPX(CPU *c, OP_CODE_INFO *o){
-    int8_t src = getRegByte(c, IND_X) - o->address;
-    setFlag(c, C, src < 0x100);
-    setFlag(c, S, (src & 0x40));    // get 7th bit of src
-    setFlag(c, Z, (src &= 0xff));
+void cpx(CPU *c, OP_CODE_INFO *o){
+    int8_t xVal = getRegByte(c,IND_X);
+    int8_t operand = o->operand;
+    int8_t diff = xVal-operand;
+    //longdiff is used to calculate whether a carry occurred
+    uint16_t longDiff = (0x00FF&xVal) - (0x00FF&operand);
+    setFlag(c, C, longDiff < 0x100);
+    setFlag(c, S, (diff & 0x80) ? 1 : 0);    // get 7th bit of src
+    setFlag(c, Z, diff ? 0 : 1);
 }
 
 //Compare memory and index y
-void CPY(CPU *c, OP_CODE_INFO *o){
-    int8_t src = getRegByte(c, IND_Y) - o->address;
-    setFlag(c, C, src < 0x100);
-    setFlag(c, S, (src & 0x40));    // get 7th bit of src
-    setFlag(c, Z, (src &= 0xff));
+void cpy(CPU *c, OP_CODE_INFO *o){
+    int8_t yVal = getRegByte(c,IND_Y);
+    int8_t operand = o->operand;
+    int8_t diff = yVal-operand;
+    //longdiff is used to calculate whether a carry occurred
+    uint16_t longDiff = (0x00FF&yVal) - (0x0FF&operand);
+    setFlag(c, C, longDiff < 0x100);
+    setFlag(c, S, (diff & 0x80) ? 1 : 0);    // get 7th bit of src
+    setFlag(c, Z, diff ? 0 : 1);
+}
+
+//Decrement accum by 1
+void dec(CPU *c, OP_CODE_INFO *o){
+    uint8_t accumVal = getRegByte(c, ACCUM);
+    uint8_t res = accumVal - 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, ACCUM, res);
+}
+
+//Decrement X index by 1
+void dex(CPU *c, OP_CODE_INFO *o){
+    uint8_t xVal = getRegByte(c, IND_X);
+    uint8_t res = xVal - 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, IND_X, res);
+}
+
+//Decrement Y index by 1
+void dey(CPU *c, OP_CODE_INFO *o){
+    uint8_t yVal = getRegByte(c, IND_Y);
+    uint8_t res = yVal - 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, IND_Y, res);
+}
+
+//Increment accum by 1
+void inc(CPU *c, OP_CODE_INFO *o){
+    uint8_t accumVal = getRegByte(c, ACCUM);
+    uint8_t res = accumVal + 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, ACCUM, res);
+}
+
+//Increment X index by 1
+void inx(CPU *c, OP_CODE_INFO *o){
+    uint8_t xVal = getRegByte(c, IND_X);
+    uint8_t res = xVal + 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, IND_X, res);
 }
 
 //Jump PC to 16 bit operand
-void JMP(CPU *c, OP_CODE_INFO *o){
-    c->PC = o->operand;
+void jmp(CPU *c, OP_CODE_INFO *o){
+    c->PC = 0xFFFF&(o->address);
 }
 
 //Jump to subroutine
-void JSR(CPU *c, OP_CODE_INFO *o){
+void jsr(CPU *c, OP_CODE_INFO *o){
     //decrement PC because PC will be
     //incremented by one when it jumps back
     c->PC--;
@@ -372,31 +579,32 @@ void JSR(CPU *c, OP_CODE_INFO *o){
 }
 
 //Load value into accumulator
-void LDA(CPU *c, OP_CODE_INFO *o){
+void lda(CPU *c, OP_CODE_INFO *o){
     setSign(c, o->operand);
     setZero(c, o->operand);
     setRegByte(c, ACCUM, o->operand);
 }
 
 //Load value into x reg
-void LDX(CPU *c, OP_CODE_INFO *o){
+void ldx(CPU *c, OP_CODE_INFO *o){
     setSign(c, o->operand);
     setZero(c, o->operand);
     setRegByte(c, IND_X, o->operand);
 }
 
 //Load value into y reg
-void LDY(CPU *c, OP_CODE_INFO *o){
+void ldy(CPU *c, OP_CODE_INFO *o){
     setSign(c, o->operand);
     setZero(c, o->operand);
     setRegByte(c, IND_Y, o->operand);
 }
 
-//Logical shift right
-void LSR(CPU *c, OP_CODE_INFO *o){
+//Logical shift right with zero fill
+void lsr(CPU *c, OP_CODE_INFO *o){
     //shift rightmost bit into carry
     setFlag(c, C, o->operand & 0x01);
-    int8_t shifted = o->operand >> 1;
+    //cast to uint8_t to force zero fill
+    int8_t shifted = ((uint8_t)o->operand) >> 1;
     setSign(c, shifted);
     setZero(c, shifted);
     if(o->mode == Accumulator){
@@ -407,10 +615,10 @@ void LSR(CPU *c, OP_CODE_INFO *o){
 }
 
 // No operation
-void NOP(CPU *c, OP_CODE_INFO *o){}
+void nop(CPU *c, OP_CODE_INFO *o){}
 
 // OR memory with accumulator
-void ORA(CPU *c, OP_CODE_INFO *o){
+void ora(CPU *c, OP_CODE_INFO *o){
     int8_t src = o->operand | getRegByte(c, ACCUM);
     setFlag(c, Z, src);
     setFlag(c, S, src);
@@ -418,30 +626,84 @@ void ORA(CPU *c, OP_CODE_INFO *o){
 }
 
 // Push accumulator onto stack
-void PHA(CPU *c, OP_CODE_INFO *o){
+void pha(CPU *c, OP_CODE_INFO *o){
     PUSH(c, o, getRegByte(c, ACCUM));
 }
 
 // Push status register onto stack
-void PHP(CPU *c, OP_CODE_INFO *o){
+void php(CPU *c, OP_CODE_INFO *o){
     PUSH(c, o, getRegByte(c, STATUS));
 }
 
 // Pull accumulator from stack
-void PLA(CPU *c, OP_CODE_INFO *o){
+void pla(CPU *c, OP_CODE_INFO *o){
     // setRegByte(c, ACCUM, PULL(c));
 }
 
 // Pull status register from stack
-void PLP(CPU *c, OP_CODE_INFO *o){
+void plp(CPU *c, OP_CODE_INFO *o){
     // setRegByte(c, STATUS, PULL(c));
 }
 
-/*
-int main ()
-{
-    CPU *c = getCPU();
-    print(c);
-    return 0;
+// Subtract operand from accumulator with borrow
+void sbc(CPU *c, OP_CODE_INFO *o){
+    //we want to subtract the opposite of the carry bit
+    int8_t carry = getFlag(c,C) ? 0 : 1; 
+    int8_t accum = getRegByte(c,ACCUM);
+    int8_t operand = o->operand;
+    uint16_t diff = (0x00FF&accum) - (0x00FF&operand) - (0x00FF&carry);
+    setSign(c,diff&0xFF);
+    setZero(c,diff&0xFF);
+    setOverflowSubtract(c,accum,operand,diff&0xFF);
+    if(getFlag(c,D)){ //in decimal mode
+        if(((accum & 0xF) - carry) < (operand & 0xF)){
+            diff -= 6;
+        }
+        if(diff > 0x99){
+            diff -= 0x60;
+        }
+    }
+    setFlag(c,C, diff < 0x100);
+    setRegByte(c,ACCUM,diff&0xFF);
 }
-*/
+
+// Set carry flag to 1
+void sec(CPU *c, OP_CODE_INFO *o){
+    setFlag(c, C, 1);
+}
+
+// Store accumulator reg into memory
+void sta(CPU *c, OP_CODE_INFO *o){
+    write(c, o->address, getRegByte(c,ACCUM));
+}
+
+// Store X reg into memory
+void stx(CPU *c, OP_CODE_INFO *o){
+    write(c, o->address, getRegByte(c,IND_X));
+}
+
+// Transfer accumulator to Y reg
+void tay(CPU *c, OP_CODE_INFO *o){
+    int8_t accumVal = getRegByte(c,ACCUM);
+    setSign(c,accumVal);
+    setZero(c,accumVal);
+    setRegByte(c,IND_Y,accumVal);
+}
+
+// Transfer Y to accumulator
+void tya(CPU *c, OP_CODE_INFO *o){
+    int8_t yVal = getRegByte(c,IND_Y);
+    setSign(c,yVal);
+    setZero(c,yVal);
+    setRegByte(c,ACCUM,yVal);
+}
+
+// Transfer x to accumulator
+void txa(CPU *c, OP_CODE_INFO *o){
+    int8_t xVal = getRegByte(c,IND_X);
+    setSign(c,xVal);
+    setZero(c,xVal);
+    setRegByte(c,ACCUM,xVal);
+}
+
+
