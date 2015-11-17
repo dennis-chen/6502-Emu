@@ -117,5 +117,6 @@ void freeOP_CODE_INFO(OP_CODE_INFO *o);
 void setRegBit(CPU *c,REG name,int8_t bit,int8_t val);
 int8_t getRegBit(CPU *c,REG name,int8_t bit);
 char *byte_to_binary(int x);
+void run_ops(CPU *c, int16_t end);
 
 #endif
