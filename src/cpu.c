@@ -474,11 +474,12 @@ void ldy(CPU *c, OP_CODE_INFO *o){
     setRegByte(c, IND_Y, o->operand);
 }
 
-//Logical shift right
+//Logical shift right with zero fill
 void lsr(CPU *c, OP_CODE_INFO *o){
     //shift rightmost bit into carry
     setFlag(c, C, o->operand & 0x01);
-    int8_t shifted = o->operand >> 1;
+    //cast to uint8_t to force zero fill
+    int8_t shifted = ((uint8_t)o->operand) >> 1;
     setSign(c, shifted);
     setZero(c, shifted);
     if(o->mode == Accumulator){
@@ -559,13 +560,25 @@ void stx(CPU *c, OP_CODE_INFO *o){
 // Transfer accumulator to Y reg
 void tay(CPU *c, OP_CODE_INFO *o){
     int8_t accumVal = getRegByte(c,ACCUM);
+    setSign(c,accumVal);
+    setZero(c,accumVal);
     setRegByte(c,IND_Y,accumVal);
 }
 
 // Transfer Y to accumulator
 void tya(CPU *c, OP_CODE_INFO *o){
-    int8_t accumVal = getRegByte(c,IND_Y);
-    setRegByte(c,ACCUM,accumVal);
+    int8_t yVal = getRegByte(c,IND_Y);
+    setSign(c,yVal);
+    setZero(c,yVal);
+    setRegByte(c,ACCUM,yVal);
+}
+
+// Transfer x to accumulator
+void txa(CPU *c, OP_CODE_INFO *o){
+    int8_t xVal = getRegByte(c,IND_X);
+    setSign(c,xVal);
+    setZero(c,xVal);
+    setRegByte(c,ACCUM,xVal);
 }
 
 /*

@@ -100,6 +100,7 @@ void sta(CPU *c, OP_CODE_INFO *o);
 void stx(CPU *c, OP_CODE_INFO *o);
 void tay(CPU *c, OP_CODE_INFO *o);
 void tya(CPU *c, OP_CODE_INFO *o);
+void txa(CPU *c, OP_CODE_INFO *o);
 void setZero(CPU *c,int8_t val);
 void setSign(CPU *c,int8_t val);
 void setOverflow(CPU *c,int8_t a,int8_t b,int8_t val);

@@ -166,14 +166,15 @@ static char * ASL1() {
 
 static char * ASL2() {
     //Non Accumulator addressing mode
-    //TODO: Add test of writing to given memory address
-    printf("TODO: finish implementing ASL2\n");
     CPU *c = getCPU();
     int8_t operand = 0xFF;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    uint16_t address = 0xEFEF;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,Immediate);
     asl(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
+    int8_t addrVal = read(c,address);
     mu_assert("ASL2 err, ACCUM reg != 0", accumVal == 0);
+    mu_assert("ASL2 err, Address val != -2", addrVal == -2);
     mu_run_test_with_args(testRegStatus,c,"10100001",
             "          NVUBDIZC    NVUBDIZC\nASL2 err, %s != %s");
     freeOP_CODE_INFO(o);
@@ -682,7 +683,9 @@ static char * TAY1() {
     setRegByte(c,ACCUM,-1);
     tay(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
-    mu_assert("TAY1 err, Y reg != 0xFE", yVal == -1);
+    mu_assert("TAY1 err, Y reg != -1", yVal == -1);
+    mu_run_test_with_args(testRegStatus,c,"10100000",
+            "          NVUBDIZC    NVUBDIZC\nTAY1 err, %s != %s");
     freeOP_CODE_INFO(o);
     free(c);
     return 0;
@@ -691,10 +694,28 @@ static char * TAY1() {
 static char * TYA1() {
     CPU *c = getCPU();
     OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
-    setRegByte(c,IND_Y,-39);
+    setRegByte(c,IND_Y,0);
+    setRegByte(c,ACCUM,-39);
     tya(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
-    mu_assert("TYA1 err, ACCUM reg != 0xFE", accumVal == -39);
+    mu_assert("TYA1 err, ACCUM reg != 0", accumVal == 0);
+    mu_run_test_with_args(testRegStatus,c,"00100010",
+            "          NVUBDIZC    NVUBDIZC\nTYA1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * TXA1() {
+    CPU *c = getCPU();
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    setRegByte(c,IND_X,-50);
+    setRegByte(c,ACCUM,39);
+    txa(c,o);
+    int8_t accumVal = getRegByte(c,ACCUM);
+    mu_assert("TXA1 err, ACCUM reg != -50", accumVal == -50);
+    mu_run_test_with_args(testRegStatus,c,"10100000",
+            "          NVUBDIZC    NVUBDIZC\nTXA1 err, %s != %s");
     freeOP_CODE_INFO(o);
     free(c);
     return 0;
@@ -814,7 +835,7 @@ static char * INX1() {
     int8_t xVal = getRegByte(c,IND_X);
     mu_assert("INX1 err, IND_X reg != 0", xVal == 0);
     mu_run_test_with_args(testRegStatus,c,"00100010",
-            "          NVUBDIZC    NVUBDIZC\ninx1 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nINX1 err, %s != %s");
     freeOP_CODE_INFO(o);
     free(c);
     return 0;
@@ -828,7 +849,83 @@ static char * INX2() {
     int8_t xVal = getRegByte(c,IND_X);
     mu_assert("INX2 err, IND_X reg != -102", xVal == -102);
     mu_run_test_with_args(testRegStatus,c,"10100000",
-            "          NVUBDIZC    NVUBDIZC\ninx2 err, %s != %s");
+            "          NVUBDIZC    NVUBDIZC\nINX2 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * JMP1() {
+    CPU *c = getCPU();
+    uint16_t address = 0xCFEE;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    jmp(c,o);
+    mu_assert("JMP1 err, PC != 0xCFEE", c->PC == 0xCFEE);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * LSR1() {
+    //test LSR and save to memory address
+    CPU *c = getCPU();
+    uint16_t address = 0xCFEE;
+    int8_t operand = 0xFF;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,Immediate);
+    lsr(c,o);
+    int8_t memVal = read(c,address);
+    int8_t accumVal = getRegByte(c,ACCUM);
+    mu_assert("LSR1 err, memVal != 0x7F", memVal == 0x7F);
+    mu_assert("LSR1 err, accumVal != 0", accumVal == 0);
+    mu_run_test_with_args(testRegStatus,c,"00100001",
+            "          NVUBDIZC    NVUBDIZC\nLSR1 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * LSR2() {
+    //test LSR and save to memory address
+    CPU *c = getCPU();
+    uint16_t address = 0xCFEE;
+    int8_t operand = 0xFF;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,Accumulator);
+    lsr(c,o);
+    int8_t memVal = read(c,address);
+    int8_t accumVal = getRegByte(c,ACCUM);
+    mu_assert("LSR2 err, memVal != 0", memVal == 0);
+    mu_assert("LSR2 err, accumVal != 0x7F", accumVal == 0x7F);
+    mu_run_test_with_args(testRegStatus,c,"00100001",
+            "          NVUBDIZC    NVUBDIZC\nLSR2 err, %s != %s");
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * NOP1() {
+    CPU *c = getCPU();
+    uint16_t address = 0xFFFF;
+    int8_t operand = 0xFF;
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,Immediate);
+    int8_t statusBef = getRegByte(c,STATUS);
+    int8_t stackBef = getRegByte(c,STACK);
+    int8_t accumBef = getRegByte(c,ACCUM);
+    int8_t indXBef = getRegByte(c,IND_X);
+    int8_t indYBef = getRegByte(c,IND_Y);
+    uint16_t PCBef = c->PC;
+    nop(c,o);
+    int8_t statusAft = getRegByte(c,STATUS);
+    int8_t stackAft = getRegByte(c,STACK);
+    int8_t accumAft = getRegByte(c,ACCUM);
+    int8_t indXAft = getRegByte(c,IND_X);
+    int8_t indYAft = getRegByte(c,IND_Y);
+    uint16_t PCAft = c->PC;
+    mu_assert("NOP1 err, STATUS reg changed", statusBef == statusAft);
+    mu_assert("NOP1 err, STACK reg changed", stackBef == stackAft);
+    mu_assert("NOP1 err, ACCUM reg changed", accumBef == accumAft);
+    mu_assert("NOP1 err, IND_X reg changed", indXBef == indXAft);
+    mu_assert("NOP1 err, IND_Y reg changed", indYBef == indYAft);
+    mu_assert("NOP1 err, PC changed", PCBef == PCAft);
     freeOP_CODE_INFO(o);
     free(c);
     return 0;
@@ -869,12 +966,16 @@ static char * all_tests() {
     mu_run_test(INC2);
     mu_run_test(INX1);
     mu_run_test(INX2);
+    mu_run_test(JMP1);
     mu_run_test(LDA1);
     mu_run_test(LDA2);
     mu_run_test(LDX1);
     mu_run_test(LDX2);
     mu_run_test(LDY1);
     mu_run_test(LDY2);
+    mu_run_test(LSR1);
+    mu_run_test(LSR2);
+    mu_run_test(NOP1);
     mu_run_test(SBC1);
     mu_run_test(SBC2);
     mu_run_test(SBC3);
@@ -885,6 +986,7 @@ static char * all_tests() {
     mu_run_test(SEC1);
     mu_run_test(TAY1);
     mu_run_test(TYA1);
+    mu_run_test(TXA1);
     mu_run_test(STA1);
     mu_run_test(STX1);
     return 0;
