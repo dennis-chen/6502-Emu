@@ -356,35 +356,83 @@ void clv(CPU *c, __attribute__ ((unused)) OP_CODE_INFO *o){
 
 //Compare memory and accumulator
 void cmp(CPU *c, OP_CODE_INFO *o){
-    int8_t src = getRegByte(c, ACCUM) - o->address;
-    setFlag(c, C, src < 0x100);
-    setFlag(c, S, (src & 0x40));    // get 7th bit of src
-    setFlag(c, Z, (src &= 0xff));
+    int8_t accum = getRegByte(c,ACCUM);
+    int8_t operand = o->operand;
+    int8_t diff = accum-operand;
+    //longdiff is used to calculate whether a carry occurred
+    uint16_t longDiff = (0x00FF&accum) - (0x00FF&operand);
+    setFlag(c, C, longDiff < 0x100);
+    setFlag(c, S, (diff & 0x80) ? 1 : 0);    // get 7th bit of src
+    setFlag(c, Z, diff ? 0 : 1);
 }
 
 //Compare memory and index x
 void cpx(CPU *c, OP_CODE_INFO *o){
-    int8_t src = getRegByte(c, IND_X) - o->address;
-    setFlag(c, C, src < 0x100);
-    setFlag(c, S, (src & 0x40));    // get 7th bit of src
-    setFlag(c, Z, (src &= 0xff));
+    int8_t xVal = getRegByte(c,IND_X);
+    int8_t operand = o->operand;
+    int8_t diff = xVal-operand;
+    //longdiff is used to calculate whether a carry occurred
+    uint16_t longDiff = (0x00FF&xVal) - (0x00FF&operand);
+    setFlag(c, C, longDiff < 0x100);
+    setFlag(c, S, (diff & 0x80) ? 1 : 0);    // get 7th bit of src
+    setFlag(c, Z, diff ? 0 : 1);
 }
 
 //Compare memory and index y
 void cpy(CPU *c, OP_CODE_INFO *o){
-    int8_t src = getRegByte(c, IND_Y) - o->address;
-    setFlag(c, C, src < 0x100);
-    setFlag(c, S, (src & 0x40));    // get 7th bit of src
-    setFlag(c, Z, (src &= 0xff));
+    int8_t yVal = getRegByte(c,IND_Y);
+    int8_t operand = o->operand;
+    int8_t diff = yVal-operand;
+    //longdiff is used to calculate whether a carry occurred
+    uint16_t longDiff = (0x00FF&yVal) - (0x0FF&operand);
+    setFlag(c, C, longDiff < 0x100);
+    setFlag(c, S, (diff & 0x80) ? 1 : 0);    // get 7th bit of src
+    setFlag(c, Z, diff ? 0 : 1);
 }
 
-//Decrement Y index by 1 (unsigned)
+//Decrement accum by 1
+void dec(CPU *c, OP_CODE_INFO *o){
+    uint8_t accumVal = getRegByte(c, ACCUM);
+    uint8_t res = accumVal - 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, ACCUM, res);
+}
+
+//Decrement X index by 1
+void dex(CPU *c, OP_CODE_INFO *o){
+    uint8_t xVal = getRegByte(c, IND_X);
+    uint8_t res = xVal - 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, IND_X, res);
+}
+
+//Decrement Y index by 1
 void dey(CPU *c, OP_CODE_INFO *o){
     uint8_t yVal = getRegByte(c, IND_Y);
     uint8_t res = yVal - 1;
     setSign(c,res);
     setZero(c,res);
     setRegByte(c, IND_Y, res);
+}
+
+//Increment accum by 1
+void inc(CPU *c, OP_CODE_INFO *o){
+    uint8_t accumVal = getRegByte(c, ACCUM);
+    uint8_t res = accumVal + 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, ACCUM, res);
+}
+
+//Increment X index by 1
+void inx(CPU *c, OP_CODE_INFO *o){
+    uint8_t xVal = getRegByte(c, IND_X);
+    uint8_t res = xVal + 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, IND_X, res);
 }
 
 //Jump PC to 16 bit operand
