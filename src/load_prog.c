@@ -16,7 +16,8 @@ int get_hex_from_char(char c) {
 
 int get_hex_from_chars(char *c) {
     int hex_val = 0, length;
-    for (int i = 0; c[i] != '\0' && c[i] != ' ' && c[i] != '\n'; i++)
+    int i;
+    for (i = 0; c[i] != '\0' && c[i] != ' ' && c[i] != '\n'; i++)
         hex_val = get_hex_from_char(c[i]) + (hex_val << 4);
     return hex_val;
 }
@@ -71,7 +72,8 @@ int16_t load_program(int argc, char **argv, int8_t *mem, int16_t start) {
 void test_1() {
     char *test_words[6] = {"0600: ", "8f", "16", "3f", " 4d", "4d "};
     int8_t testhex = 0;
-    for (int i = 0; i < sizeof(test_words)/sizeof(test_words[0]); i++) {
+    int i;
+    for (i = 0; i < sizeof(test_words)/sizeof(test_words[0]); i++) {
         testhex = get_hex_from_chars(test_words[i]);
         printf("%s\t%x\t%d\n", test_words[i], testhex, testhex);
     }
@@ -87,7 +89,8 @@ void test_2(int argc, char **argv) {
     }
 
     printf("Loaded program into memory location %x to %x\n", start, end);
-    for (int i = start; i < end; i++)
+    int i;
+    for (i = start; i < end; i++)
         printf("%02x ", mem[i]);
     printf("\n");
 
