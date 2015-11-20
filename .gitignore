@@ -33,3 +33,6 @@
 
 # Vim swap files
 *.swp
+
+# Python files
+*.pyc
