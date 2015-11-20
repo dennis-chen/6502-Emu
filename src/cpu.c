@@ -183,8 +183,20 @@ void freeOP_CODE_INFO(OP_CODE_INFO *o){
     free(o);
 }
 
+void wait(int *counter, int step) {
+    char enter;
+    if (*counter < step) {
+        (*counter)++;
+        return;
+    }
+    *counter = 0;
+    printf("Press enter to proceed...\n");
+    while ((enter = getchar()) != '\n') { /* wait until enter is pressed */ }
+}
+
 /* RUN PROGRAM IN MEMORY */
 void run_ops(CPU *c, int16_t end) {
+    int counter = 0, step = 5;
     OP_CODE_INFO *op = malloc(sizeof(OP_CODE_INFO));
     int16_t start = c->PC;
     int16_t *pc = &(c->PC);
@@ -304,6 +316,10 @@ void run_ops(CPU *c, int16_t end) {
                 (*pc)++;
                 break;
         }
+        //int counter = 0, step = 5;
+        wait(&counter, step);
+        printf("\n");
+        print(c);
     }
     printf("\n");
     print(c);
