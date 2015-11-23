@@ -4,7 +4,7 @@
 int tests_run = 0;
 
 int8_t testADCHelper(CPU *c, int8_t accumByte, int8_t operand){
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,accumByte);
     adc(c,o);
     freeOP_CODE_INFO(o);
@@ -12,7 +12,7 @@ int8_t testADCHelper(CPU *c, int8_t accumByte, int8_t operand){
 }
 
 int8_t testSBCHelper(CPU *c, int8_t accumByte, int8_t operand){
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,accumByte);
     sbc(c,o);
     freeOP_CODE_INFO(o);
@@ -120,7 +120,7 @@ static char * AND1() {
     CPU *c = getCPU();
     int8_t operand = 0x00;
     int8_t accum = 0xFF;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,accum);
     and(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -137,7 +137,7 @@ static char * AND2() {
     CPU *c = getCPU();
     int8_t operand = 0x85;
     int8_t accum = 0xF1;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,accum);
     and(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -153,7 +153,7 @@ static char * ASL1() {
     //Accumulator addressing mode
     CPU *c = getCPU();
     int8_t operand = 0xFF;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Accumulator);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeAccumulator);
     asl(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("ASL1 err, ACCUM reg != -2", accumVal == -2);
@@ -165,11 +165,11 @@ static char * ASL1() {
 }
 
 static char * ASL2() {
-    //Non Accumulator addressing mode
+    //Non modeAccumulator addressing mode
     CPU *c = getCPU();
     int8_t operand = 0xFF;
     uint16_t address = 0xEFEF;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,modeImmediate);
     asl(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
     int8_t addrVal = read(c,address);
@@ -185,7 +185,7 @@ static char * ASL2() {
 static char * BNE1() {
     CPU *c = getCPU();
     uint16_t address = 0x8FFE;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setFlag(c,Z,0);
     bne(c,o);
     mu_assert("BNE1 err, PC != 0x8FFE", c->PC == 0x8FFE);
@@ -197,7 +197,7 @@ static char * BNE1() {
 static char * BNE2() {
     CPU *c = getCPU();
     uint16_t address = 0xFFFF;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setFlag(c,Z,1);
     bne(c,o);
     mu_assert("BNE2 err, PC != 0", c->PC == 0);
@@ -209,7 +209,7 @@ static char * BNE2() {
 static char * BPL1() {
     CPU *c = getCPU();
     uint16_t address = 0x8FFE;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setFlag(c,S,0);
     bpl(c,o);
     mu_assert("BPL1 err, PC != 0x8FFE", c->PC == 0x8FFE);
@@ -221,7 +221,7 @@ static char * BPL1() {
 static char * BPL2() {
     CPU *c = getCPU();
     uint16_t address = 0xFFFF;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setFlag(c,S,1);
     bpl(c,o);
     mu_assert("BPL2 err, PC != 0", c->PC == 0);
@@ -233,7 +233,7 @@ static char * BPL2() {
 static char * BCC1() {
     CPU *c = getCPU();
     uint16_t address = 0x8FFE;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setFlag(c,C,0);
     bcc(c,o);
     mu_assert("BCC1 err, PC != 0x8FFE", c->PC == 0x8FFE);
@@ -245,7 +245,7 @@ static char * BCC1() {
 static char * BCC2() {
     CPU *c = getCPU();
     uint16_t address = 0xFFFF;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setFlag(c,C,1);
     bcc(c,o);
     mu_assert("BCC2 err, PC != 0", c->PC == 0);
@@ -257,7 +257,7 @@ static char * BCC2() {
 static char * BCS1() {
     CPU *c = getCPU();
     uint16_t address = 0x8FFE;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setFlag(c,C,1);
     bcs(c,o);
     mu_assert("BCS1 err, PC != 0x8FFE", c->PC == 0x8FFE);
@@ -269,7 +269,7 @@ static char * BCS1() {
 static char * BCS2() {
     CPU *c = getCPU();
     uint16_t address = 0x8FFE;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setFlag(c,C,0);
     bcs(c,o);
     mu_assert("BCS2 err, PC != 0", c->PC == 0);
@@ -281,7 +281,7 @@ static char * BCS2() {
 static char * BEQ1() {
     CPU *c = getCPU();
     uint16_t address = 0x8FFE;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setFlag(c,Z,1);
     beq(c,o);
     mu_assert("BEQ1 err, PC != 0x8FFE", c->PC == 0x8FFE);
@@ -293,7 +293,7 @@ static char * BEQ1() {
 static char * BEQ2() {
     CPU *c = getCPU();
     uint16_t address = 0x1111;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setFlag(c,Z,0);
     beq(c,o);
     mu_assert("BEQ2 err, PC != 0", c->PC == 0);
@@ -305,7 +305,7 @@ static char * BEQ2() {
 static char * BIT1() {
     CPU *c = getCPU();
     int8_t operand = 0xC0;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,0);
     bit(c,o);
     mu_run_test_with_args(testRegStatus,c,"11100010",
@@ -318,7 +318,7 @@ static char * BIT1() {
 static char * BIT2() {
     CPU *c = getCPU();
     int8_t operand = 0x01;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,1);
     bit(c,o);
     mu_run_test_with_args(testRegStatus,c,"00100000",
@@ -330,7 +330,7 @@ static char * BIT2() {
 
 static char * CLC1() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setFlag(c,C,1);
     mu_run_test_with_args(testRegStatus,c,"00100001",
             "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
@@ -346,7 +346,7 @@ static char * DEC1() {
     //decrement X reg by 1 with neg twos complement val
     //in X reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,ACCUM,-34);
     dec(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -362,7 +362,7 @@ static char * DEC2() {
     //decrement X reg by 1 with positive twos complement val
     //in X reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,ACCUM,1);
     dec(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -378,7 +378,7 @@ static char * DEC3() {
     //decrement X reg by 1 with zero
     //in X reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,ACCUM,0);
     dec(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -394,7 +394,7 @@ static char * DEX1() {
     //decrement X reg by 1 with neg twos complement val
     //in X reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,IND_X,-34);
     dex(c,o);
     int8_t xVal = getRegByte(c,IND_X);
@@ -410,7 +410,7 @@ static char * DEX2() {
     //decrement X reg by 1 with positive twos complement val
     //in X reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,IND_X,1);
     dex(c,o);
     int8_t xVal = getRegByte(c,IND_X);
@@ -426,7 +426,7 @@ static char * DEX3() {
     //decrement X reg by 1 with zero
     //in X reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,IND_X,0);
     dex(c,o);
     int8_t xVal = getRegByte(c,IND_X);
@@ -442,7 +442,7 @@ static char * DEY1() {
     //decrement Y reg by 1 with neg twos complement val
     //in Y reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,IND_Y,-34);
     dey(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
@@ -458,7 +458,7 @@ static char * DEY2() {
     //decrement Y reg by 1 with positive twos complement val
     //in Y reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,IND_Y,1);
     dey(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
@@ -474,7 +474,7 @@ static char * DEY3() {
     //decrement Y reg by 1 with zero
     //in Y reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,IND_Y,0);
     dey(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
@@ -490,7 +490,7 @@ static char * LDA1() {
     //load zero val into accumulator
     CPU *c = getCPU();
     int8_t operand = 0x00;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,10);
     lda(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -506,7 +506,7 @@ static char * LDA2() {
     //load neg val into accumulator
     CPU *c = getCPU();
     int8_t operand = -99;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     lda(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
     mu_assert("LDA2 err, ACCUM reg != -99", accumVal == -99);
@@ -521,7 +521,7 @@ static char * LDX1() {
     //load zero val into x reg
     CPU *c = getCPU();
     int8_t operand = 0x00;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,10);
     ldx(c,o);
     int8_t xVal = getRegByte(c,IND_X);
@@ -537,7 +537,7 @@ static char * LDX2() {
     //load neg val into x reg
     CPU *c = getCPU();
     int8_t operand = -99;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     ldx(c,o);
     int8_t xVal = getRegByte(c,IND_X);
     mu_assert("LDX2 err, ACCUM reg != -99", xVal == -99);
@@ -552,7 +552,7 @@ static char * LDY1() {
     //load zero val into x reg
     CPU *c = getCPU();
     int8_t operand = 0x00;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,10);
     ldy(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
@@ -568,7 +568,7 @@ static char * LDY2() {
     //load neg val into x reg
     CPU *c = getCPU();
     int8_t operand = -99;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     ldy(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
     mu_assert("LDY2 err, ACCUM reg != -99", yVal == -99);
@@ -669,7 +669,7 @@ static char * SBC7() {
 
 static char * SEC1() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     sec(c,o);
     mu_assert("SEC1 err, Carry flag != 1", getFlag(c,C) == 1);
     freeOP_CODE_INFO(o);
@@ -679,7 +679,7 @@ static char * SEC1() {
 
 static char * TAY1() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,ACCUM,-1);
     tay(c,o);
     int8_t yVal = getRegByte(c,IND_Y);
@@ -693,7 +693,7 @@ static char * TAY1() {
 
 static char * TYA1() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,IND_Y,0);
     setRegByte(c,ACCUM,-39);
     tya(c,o);
@@ -708,7 +708,7 @@ static char * TYA1() {
 
 static char * TXA1() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,IND_X,-50);
     setRegByte(c,ACCUM,39);
     txa(c,o);
@@ -724,7 +724,7 @@ static char * TXA1() {
 static char * STA1() {
     CPU *c = getCPU();
     uint16_t address = 0xFFEE;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setRegByte(c,ACCUM,-39);
     sta(c,o);
     int8_t addrVal = read(c,address);
@@ -737,7 +737,7 @@ static char * STA1() {
 static char * STX1() {
     CPU *c = getCPU();
     uint16_t address = 0xFFEE;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     setRegByte(c,IND_X,-39);
     stx(c,o);
     int8_t addrVal = read(c,address);
@@ -750,7 +750,7 @@ static char * STX1() {
 static char * CMP1() {
     CPU *c = getCPU();
     int8_t operand = 1;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,1);
     cmp(c,o);
     mu_run_test_with_args(testRegStatus,c,"00100011",
@@ -763,7 +763,7 @@ static char * CMP1() {
 static char * CMP2() {
     CPU *c = getCPU();
     int8_t operand = 50;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,ACCUM,1);
     cmp(c,o);
     mu_run_test_with_args(testRegStatus,c,"10100000",
@@ -776,7 +776,7 @@ static char * CMP2() {
 static char * CPX1() {
     CPU *c = getCPU();
     int8_t operand = 5;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,IND_X,8);
     cpx(c,o);
     mu_run_test_with_args(testRegStatus,c,"00100001",
@@ -789,7 +789,7 @@ static char * CPX1() {
 static char * CPX2() {
     CPU *c = getCPU();
     int8_t operand = 75;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,0,modeImmediate);
     setRegByte(c,IND_X,59);
     cpx(c,o);
     mu_run_test_with_args(testRegStatus,c,"10100000",
@@ -801,7 +801,7 @@ static char * CPX2() {
 
 static char * INC1() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,ACCUM,-1);
     inc(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -815,7 +815,7 @@ static char * INC1() {
 
 static char * INC2() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,ACCUM,-103);
     inc(c,o);
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -829,7 +829,7 @@ static char * INC2() {
 
 static char * INX1() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,IND_X,-1);
     inx(c,o);
     int8_t xVal = getRegByte(c,IND_X);
@@ -843,7 +843,7 @@ static char * INX1() {
 
 static char * INX2() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
     setRegByte(c,IND_X,-103);
     inx(c,o);
     int8_t xVal = getRegByte(c,IND_X);
@@ -858,7 +858,7 @@ static char * INX2() {
 static char * JMP1() {
     CPU *c = getCPU();
     uint16_t address = 0xCFEE;
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
     jmp(c,o);
     mu_assert("JMP1 err, PC != 0xCFEE", c->PC == 0xCFEE);
     freeOP_CODE_INFO(o);
@@ -871,7 +871,7 @@ static char * LSR1() {
     CPU *c = getCPU();
     uint16_t address = 0xCFEE;
     int8_t operand = 0xFF;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,modeImmediate);
     lsr(c,o);
     int8_t memVal = read(c,address);
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -889,7 +889,7 @@ static char * LSR2() {
     CPU *c = getCPU();
     uint16_t address = 0xCFEE;
     int8_t operand = 0xFF;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,Accumulator);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,modeAccumulator);
     lsr(c,o);
     int8_t memVal = read(c,address);
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -906,7 +906,7 @@ static char * NOP1() {
     CPU *c = getCPU();
     uint16_t address = 0xFFFF;
     int8_t operand = 0xFF;
-    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,Immediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,modeImmediate);
     int8_t statusBef = getRegByte(c,STATUS);
     int8_t stackBef = getRegByte(c,STACK);
     int8_t accumBef = getRegByte(c,ACCUM);

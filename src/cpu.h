@@ -1,5 +1,5 @@
-#ifndef CPU_H
-#define CPU_H
+#ifndef CPU_H_INCLUDED
+#define CPU_H_INCLUDED
 
 #include <assert.h>
 #include <stdio.h>
@@ -20,17 +20,20 @@ typedef struct cpu {
 } CPU; 
 
 typedef enum mode {
-    Immediate,
-    Absolute,
-    ZeroPageAbsolute,
-    Implied,
-    Accumulator,
-    Indexed,
-    ZeroPageIndexed,
-    Indirect,
-    PreIndexedIndirect,
-    PostIndexedIndirect,
-    Relative
+    UNUSED,
+    modeAbsolute,
+    modeAbsoluteX,
+    modeAbsoluteY,
+    modeAccumulator,
+    modeImmediate,
+    modeImplied,
+    modeIndexedIndirect,
+    modeIndirect,
+    modeIndirectIndexed,
+    modeRelative,
+    modeZeroPage,
+    modeZeroPageX,
+    modeZeroPageY
 } MODE;
 
 typedef struct op_code_info {
@@ -73,10 +76,12 @@ void clc(CPU *c,__attribute__((unused))OP_CODE_INFO *o);
 void dec(CPU *c, OP_CODE_INFO *o);
 void dex(CPU *c, OP_CODE_INFO *o);
 void dey(CPU *c, OP_CODE_INFO *o);
+void fut(CPU *c, OP_CODE_INFO *o);
 void inc(CPU *c, OP_CODE_INFO *o);
 void inx(CPU *c, OP_CODE_INFO *o);
 void bvs(CPU *c,OP_CODE_INFO *o);
 void bvc(CPU *c,OP_CODE_INFO *o);
+void brk(CPU *c,OP_CODE_INFO *o);
 void bpl(CPU *c,OP_CODE_INFO *o);
 void bne(CPU *c,OP_CODE_INFO *o);
 void bmi(CPU *c,OP_CODE_INFO *o);
@@ -123,5 +128,25 @@ void setRegBit(CPU *c,REG name,int8_t bit,int8_t val);
 int8_t getRegBit(CPU *c,REG name,int8_t bit);
 char *byte_to_binary(int x);
 void run_ops(CPU *c, int16_t end);
+void run_op(CPU *c);
+
+//unimplemented functions
+void eor(CPU *c, OP_CODE_INFO *o);
+void rol(CPU *c, OP_CODE_INFO *o);
+void ror(CPU *c, OP_CODE_INFO *o);
+void rts(CPU *c, OP_CODE_INFO *o);
+void rti(CPU *c, OP_CODE_INFO *o);
+void sei(CPU *c, OP_CODE_INFO *o);
+void sty(CPU *c, OP_CODE_INFO *o);
+void txs(CPU *c, OP_CODE_INFO *o);
+void tax(CPU *c, OP_CODE_INFO *o);
+void tsx(CPU *c, OP_CODE_INFO *o);
+void iny(CPU *c, OP_CODE_INFO *o);
+void sed(CPU *c, OP_CODE_INFO *o);
+
+extern uint8_t instructionSizes[256];
+extern uint8_t instructionModes[256];
+extern char instructionNames[256][4];
+extern void (*opcodeToFunction[256])(CPU *c, OP_CODE_INFO *o);
 
 #endif

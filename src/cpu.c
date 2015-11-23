@@ -196,133 +196,55 @@ void wait(int *counter, int step) {
 
 /* RUN PROGRAM IN MEMORY */
 void run_ops(CPU *c, int16_t end) {
-    int counter = 0, step = 5;
-    OP_CODE_INFO *op = malloc(sizeof(OP_CODE_INFO));
-    int16_t start = c->PC;
-    int16_t *pc = &(c->PC);
-    print(c);
     while (c->PC < end){
-        switch (c->addressSpace[*pc] & 0xFF) {
-            case ADC_IMM:
-                op->operand = c->addressSpace[++(*pc)];
-                op->mode = Immediate;
-                adc(c, op);
-                (*pc)++;
-                break;
-
-            case ADC_ZP:
-                op->operand = c->addressSpace[c->addressSpace[++(*pc)]];
-                op->mode = ZeroPageAbsolute;
-                adc(c, op);
-                (*pc)++;
-                break;
-
-            case LDX_IMM:
-                op->operand = c->addressSpace[++(*pc)];
-                op->mode = Immediate;
-                ldx(c, op);
-                (*pc)++;
-                break;
-
-            case STX_ZP:
-                op->address = 0x00FF & c->addressSpace[++(*pc)];
-                op->mode = ZeroPageAbsolute;
-                stx(c, op);
-                (*pc)++;
-                break;
-
-            case LDY_IMM:
-                op->operand = c->addressSpace[++(*pc)];
-                op->mode = Immediate;
-                ldy(c, op);
-                (*pc)++;
-                break;
-
-            case SEC:
-                op->mode = Implied;
-                sec(c, op);
-                (*pc)++;
-                break;
-
-            case TYA:
-                op->mode = Implied;
-                tya(c, op);
-                (*pc)++;
-                break;
-
-            case SBC_IMM:
-                op->mode = Immediate;
-                op->operand = c->addressSpace[++(*pc)];
-                sbc(c, op);
-                (*pc)++;
-                break;
-
-            case TAY:
-                op->mode = Implied;
-                tay(c, op);
-                (*pc)++;
-                break;
-
-            case CLC:
-                op->mode = Implied;
-                clc(c, op);
-                (*pc)++;
-                break;
-
-            case LDA_IMM:
-                op->mode = Immediate;
-                op->operand = c->addressSpace[++(*pc)];
-                lda(c, op);
-                (*pc)++;
-                break;
-
-            case STA_ZP:
-                op->mode = ZeroPageAbsolute;
-                op->address = 0x00FF & c->addressSpace[++(*pc)];
-                sta(c, op);
-                (*pc)++;
-                break;
-
-            case LDX_ZP:
-                op->mode = ZeroPageAbsolute;
-                op->operand = c->addressSpace[0x00FF & c->addressSpace[++(*pc)]];
-                ldx(c, op);
-                (*pc)++;
-                break;
-
-            case DEY:
-                op->mode = Implied;
-                dey(c, op);
-                (*pc)++;
-                break;
-
-            case BNE_REL:
-                op->mode = Relative;
-                (*pc)++;
-                op->address = (int) *pc + (int) c->addressSpace[*pc];
-                bne(c, op);
-                (*pc)++;
-                break;
-
-            case SBC_ZPX:
-                op->mode = ZeroPageIndexed;
-                op->operand = c->addressSpace[getRegByte(c, IND_X)+c->addressSpace[++(*pc)]];
-                sbc(c, op);
-                (*pc)++;
-                break;
-
-            default:
-                printf("op code probably not declared yet\n");
-                (*pc)++;
-                break;
-        }
-        //int counter = 0, step = 5;
-        wait(&counter, step);
-        printf("\n");
-        print(c);
+        run_op(c);
     }
-    printf("\n");
-    print(c);
+}
+
+void run_op(CPU *c){
+    //runs a single operation based on whatever
+    //is loaded into CPU memory, changing
+    //hardware state appropriately.
+    uint8_t opCode = c->addressSpace[c->PC];
+    printf("%d\n",opCode);
+    if(strcmp(instructionNames[opCode],"FUT")){
+        printf("Future opcode not implemented yet!");
+        assert(0);
+    }
+    switch(instructionModes[opCode]){
+        case UNUSED:
+            printf("Error! unused instruction mode!");
+            assert(0);
+            break;
+        case modeAbsolute:
+            break;
+        case modeAbsoluteX:
+            break;
+        case modeAbsoluteY:
+            break;
+        case modeAccumulator:
+            break;
+        case modeImmediate:
+            break;
+        case modeImplied:
+            break;
+        case modeIndexedIndirect:
+            break;
+        case modeIndirect:
+            break;
+        case modeIndirectIndexed:
+            break;
+        case modeRelative:
+            break;
+        case modeZeroPage:
+            break;
+        case modeZeroPageX:
+            break;
+        case modeZeroPageY:
+            break;
+    }
+    printf("%d\n",opCode);
+    c->PC += instructionSizes[opCode];
 }
 
 /* STACK OPERATIONS HERE */
@@ -383,7 +305,7 @@ void asl(CPU *c, OP_CODE_INFO *o){
     setCarry(c,res);
     setSign(c,resByte);
     setZero(c,resByte);
-    if(o->mode == Accumulator){
+    if(o->mode == modeAccumulator){
         setRegByte(c,ACCUM,res);
     } else {
         write(c,o->address,res);
@@ -558,6 +480,13 @@ void dey(CPU *c, OP_CODE_INFO *o){
     setRegByte(c, IND_Y, res);
 }
 
+//Unimplemented future function that will error
+//when called
+void fut(CPU *c, OP_CODE_INFO *o){
+    printf("Error! Called unimplemented future function!");
+    assert(0);
+}
+
 //Increment accum by 1
 void inc(CPU *c, OP_CODE_INFO *o){
     uint8_t accumVal = getRegByte(c, ACCUM);
@@ -623,7 +552,7 @@ void lsr(CPU *c, OP_CODE_INFO *o){
     int8_t shifted = ((uint8_t)o->operand) >> 1;
     setSign(c, shifted);
     setZero(c, shifted);
-    if(o->mode == Accumulator){
+    if(o->mode == modeAccumulator){
         setRegByte(c, ACCUM, shifted);
     } else {
         write(c, o->address, shifted);
@@ -722,4 +651,187 @@ void txa(CPU *c, OP_CODE_INFO *o){
     setRegByte(c,ACCUM,xVal);
 }
 
+void eor(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
 
+void rti(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+void rol(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+void ror(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+void rts(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+void sei(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+void sty(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+void txs(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+void tax(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+void tsx(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+void iny(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+void sed(CPU *c, OP_CODE_INFO *o){
+    printf("Called unimplemented function!");
+    assert(0);
+}
+
+uint8_t instructionSizes[256] = {
+    1, 2, 0, 0, 2, 2, 2, 0, 
+    1, 2, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0,
+    1, 3, 1, 0, 3, 3, 3, 0,
+    3, 2, 0, 0, 2, 2, 2, 0,
+    1, 2, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0, 
+    1, 3, 1, 0, 3, 3, 3, 0,
+    1, 2, 0, 0, 2, 2, 2, 0, 
+    1, 2, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0, 
+    1, 3, 1, 0, 3, 3, 3, 0,
+    1, 2, 0, 0, 2, 2, 2, 0, 
+    1, 2, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0, 
+    1, 3, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0, 
+    1, 0, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0, 
+    1, 3, 1, 0, 0, 3, 0, 0,
+    2, 2, 2, 0, 2, 2, 2, 0, 
+    1, 2, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0, 
+    1, 3, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0, 
+    1, 2, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0, 
+    1, 3, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0, 
+    1, 2, 1, 0, 3, 3, 3, 0,
+    2, 2, 0, 0, 2, 2, 2, 0, 
+    1, 3, 1, 0, 3, 3, 3, 0
+};
+
+uint8_t instructionModes[256] = {
+    6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+    10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+    1, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+    10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+    6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+    10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+    6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 8, 1, 1, 1,
+    10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+    5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+    10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
+    5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+    10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
+    5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+    10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+    5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+    10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2
+};
+
+char instructionNames[256][4] = {
+    //FUT represents unimplemented op codes
+    "BRK", "ORA", "FUT", "FUT", "FUT", "ORA", "ASL", "FUT",
+    "PHP", "ORA", "ASL", "FUT", "FUT", "ORA", "ASL", "FUT",
+    "BPL", "ORA", "FUT", "FUT", "FUT", "ORA", "ASL", "FUT",
+    "CLC", "ORA", "FUT", "FUT", "FUT", "ORA", "ASL", "FUT",
+    "JSR", "AND", "FUT", "FUT", "BIT", "AND", "ROL", "FUT",
+    "PLP", "AND", "ROL", "FUT", "BIT", "AND", "ROL", "FUT",
+    "BMI", "AND", "FUT", "FUT", "FUT", "AND", "ROL", "FUT",
+    "SEC", "AND", "FUT", "FUT", "FUT", "AND", "ROL", "FUT",
+    "RTI", "EOR", "FUT", "FUT", "FUT", "EOR", "LSR", "FUT",
+    "PHA", "EOR", "LSR", "FUT", "JMP", "EOR", "LSR", "FUT",
+    "BVC", "EOR", "FUT", "FUT", "FUT", "EOR", "LSR", "FUT",
+    "CLI", "EOR", "FUT", "FUT", "FUT", "EOR", "LSR", "FUT",
+    "RTS", "ADC", "FUT", "FUT", "FUT", "ADC", "ROR", "FUT",
+    "PLA", "ADC", "ROR", "FUT", "JMP", "ADC", "ROR", "FUT",
+    "BVS", "ADC", "FUT", "FUT", "FUT", "ADC", "ROR", "FUT",
+    "SEI", "ADC", "FUT", "FUT", "FUT", "ADC", "ROR", "FUT",
+    "FUT", "STA", "FUT", "FUT", "STY", "STA", "STX", "FUT",
+    "DEY", "FUT", "TXA", "FUT", "STY", "STA", "STX", "FUT",
+    "BCC", "STA", "FUT", "FUT", "STY", "STA", "STX", "FUT",
+    "TYA", "STA", "TXS", "FUT", "FUT", "STA", "FUT", "FUT",
+    "LDY", "LDA", "LDX", "FUT", "LDY", "LDA", "LDX", "FUT",
+    "TAY", "LDA", "TAX", "FUT", "LDY", "LDA", "LDX", "FUT",
+    "BCS", "LDA", "FUT", "FUT", "LDY", "LDA", "LDX", "FUT",
+    "CLV", "LDA", "TSX", "FUT", "LDY", "LDA", "LDX", "FUT",
+    "CPY", "CMP", "FUT", "FUT", "CPY", "CMP", "DEC", "FUT",
+    "INY", "CMP", "DEX", "FUT", "CPY", "CMP", "DEC", "FUT",
+    "BNE", "CMP", "FUT", "FUT", "FUT", "CMP", "DEC", "FUT",
+    "CLD", "CMP", "FUT", "FUT", "FUT", "CMP", "DEC", "FUT",
+    "CPX", "SBC", "FUT", "FUT", "CPX", "SBC", "INC", "FUT",
+    "INX", "SBC", "NOP", "FUT", "CPX", "SBC", "INC", "FUT",
+    "BEQ", "SBC", "FUT", "FUT", "FUT", "SBC", "INC", "FUT",
+    "SED", "SBC", "FUT", "FUT", "FUT", "SBC", "INC", "FUT"
+};
+
+void (*opcodeToFunction[256])(CPU *c, OP_CODE_INFO *o) = {
+    brk, ora, fut, fut, fut, ora, asl, fut,
+    php, ora, asl, fut, fut, ora, asl, fut,
+    bpl, ora, fut, fut, fut, ora, asl, fut,
+    clc, ora, fut, fut, fut, ora, asl, fut,
+    jsr, and, fut, fut, bit, and, rol, fut,
+    plp, and, rol, fut, bit, and, rol, fut,
+    bmi, and, fut, fut, fut, and, rol, fut,
+    sec, and, fut, fut, fut, and, rol, fut,
+    rti, eor, fut, fut, fut, eor, lsr, fut,
+    pha, eor, lsr, fut, jmp, eor, lsr, fut,
+    bvc, eor, fut, fut, fut, eor, lsr, fut,
+    cli, eor, fut, fut, fut, eor, lsr, fut,
+    rts, adc, fut, fut, fut, adc, ror, fut,
+    pla, adc, ror, fut, jmp, adc, ror, fut,
+    bvs, adc, fut, fut, fut, adc, ror, fut,
+    sei, adc, fut, fut, fut, adc, ror, fut,
+    fut, sta, fut, fut, sty, sta, stx, fut,
+    dey, fut, txa, fut, sty, sta, stx, fut,
+    bcc, sta, fut, fut, sty, sta, stx, fut,
+    tya, sta, txs, fut, fut, sta, fut, fut,
+    ldy, lda, ldx, fut, ldy, lda, ldx, fut,
+    tay, lda, tax, fut, ldy, lda, ldx, fut,
+    bcs, lda, fut, fut, ldy, lda, ldx, fut,
+    clv, lda, tsx, fut, ldy, lda, ldx, fut,
+    cpy, cmp, fut, fut, cpy, cmp, dec, fut,
+    iny, cmp, dex, fut, cpy, cmp, dec, fut,
+    bne, cmp, fut, fut, fut, cmp, dec, fut,
+    cld, cmp, fut, fut, fut, cmp, dec, fut,
+    cpx, sbc, fut, fut, cpx, sbc, inc, fut,
+    inx, sbc, nop, fut, cpx, sbc, inc, fut,
+    beq, sbc, fut, fut, fut, sbc, inc, fut,
+    sed, sbc, fut, fut, fut, sbc, inc, fut
+};
