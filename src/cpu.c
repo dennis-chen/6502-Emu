@@ -206,8 +206,9 @@ void run_op(CPU *c){
     //is loaded into CPU memory, changing
     //hardware state appropriately.
     uint8_t opCode = c->addressSpace[c->PC];
-    printf("%d\n",opCode);
-    if(strcmp(instructionNames[opCode],"FUT")){
+    printf("%x\n",c->PC);
+    printf("%s\n",instructionNames[opCode]);
+    if(strcmp(instructionNames[opCode],"FUT") == 0){
         printf("Future opcode not implemented yet!");
         assert(0);
     }
@@ -243,7 +244,6 @@ void run_op(CPU *c){
         case modeZeroPageY:
             break;
     }
-    printf("%d\n",opCode);
     c->PC += instructionSizes[opCode];
 }
 
