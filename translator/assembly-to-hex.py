@@ -86,11 +86,14 @@ def parseLines(f):
     parsedLines = []
     labels = {}
     for line in f:
-        lineDict = getLineDict(line)
-        lineDict['bytePosition'] = bytePosition
-        findAndReplaceLabels(lineDict,labels)
-        parsedLines.append(lineDict)
-        bytePosition += getByteSize(lineDict)
+        stripped = line.strip()
+        if stripped: #stripped line is not empty
+            print stripped
+            lineDict = getLineDict(stripped)
+            lineDict['bytePosition'] = bytePosition
+            findAndReplaceLabels(lineDict,labels)
+            parsedLines.append(lineDict)
+            bytePosition += getByteSize(lineDict)
     return parsedLines, labels
 
 def getHexFromLines(parsedLines,labels):

@@ -1,0 +1,17 @@
+LDX #$01; 
+STX $00; 
+SEC; 
+LDY #$07; 
+TYA; 
+SBC #$03; 
+TAY; 
+CLC; 
+LDA #$02;
+STA $01;
+loop: 
+LDX $01;
+ADC $00;
+STA $01;
+STX $00;
+DEY;
+BNE loop;
