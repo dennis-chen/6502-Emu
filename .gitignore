@@ -32,7 +32,7 @@
 *.dSYM/
 
 # Vim swap files
-*.swp
+*.sw*
 
 # Python files
 *.pyc

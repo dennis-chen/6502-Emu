@@ -183,13 +183,8 @@ void freeOP_CODE_INFO(OP_CODE_INFO *o){
     free(o);
 }
 
-void wait(int *counter, int step) {
+void wait() {
     char enter;
-    if (*counter < step) {
-        (*counter)++;
-        return;
-    }
-    *counter = 0;
     printf("Press enter to proceed...\n");
     while ((enter = getchar()) != '\n') { /* wait until enter is pressed */ }
 }
@@ -198,6 +193,8 @@ void wait(int *counter, int step) {
 void run_ops(CPU *c, int16_t end) {
     while (c->PC < end){
         run_op(c);
+        print(c);
+        wait();
     }
 }
 
@@ -206,45 +203,70 @@ void run_op(CPU *c){
     //is loaded into CPU memory, changing
     //hardware state appropriately.
     uint8_t opCode = c->addressSpace[c->PC];
-    printf("%x\n",c->PC);
-    printf("%s\n",instructionNames[opCode]);
     if(strcmp(instructionNames[opCode],"FUT") == 0){
         printf("Future opcode not implemented yet!");
         assert(0);
     }
-    switch(instructionModes[opCode]){
+    OP_CODE_INFO *o;
+    printf("%s\n",instructionNames[opCode]);
+    uint8_t mode = instructionModes[opCode];
+    uint16_t address;
+    int8_t operand;
+    switch(mode){
         case UNUSED:
             printf("Error! unused instruction mode!");
             assert(0);
             break;
         case modeAbsolute:
+            assert(0);
             break;
         case modeAbsoluteX:
+            assert(0);
             break;
         case modeAbsoluteY:
+            assert(0);
             break;
         case modeAccumulator:
+            assert(0);
             break;
         case modeImmediate:
+            address = c->PC + 1;
+            operand = c->addressSpace[address];
+            o = getOP_CODE_INFO(operand, address, mode);
             break;
         case modeImplied:
+            address = c->PC;
+            o = getOP_CODE_INFO(0, address, mode);
             break;
         case modeIndexedIndirect:
+            assert(0);
             break;
         case modeIndirect:
+            assert(0);
             break;
         case modeIndirectIndexed:
+            assert(0);
             break;
         case modeRelative:
+            //for branching within +-128 
+            address = c->PC + c->addressSpace[c->PC + 1];
+            o = getOP_CODE_INFO(0, address, mode);
             break;
         case modeZeroPage:
+            address = 0x00FF & c->addressSpace[c->PC + 1];
+            operand = c->addressSpace[address];
+            o = getOP_CODE_INFO(operand, address, mode);
             break;
         case modeZeroPageX:
+            assert(0);
             break;
         case modeZeroPageY:
+            assert(0);
             break;
     }
     c->PC += instructionSizes[opCode];
+    opcodeToFunction[opCode](c,o);
+    freeOP_CODE_INFO(o);
 }
 
 /* STACK OPERATIONS HERE */
@@ -711,6 +733,7 @@ void sed(CPU *c, OP_CODE_INFO *o){
     assert(0);
 }
 
+//from https://github.com/fogleman/nes/blob/master/nes/cpu.go
 uint8_t instructionSizes[256] = {
     1, 2, 0, 0, 2, 2, 2, 0, 
     1, 2, 1, 0, 3, 3, 3, 0,
@@ -746,6 +769,7 @@ uint8_t instructionSizes[256] = {
     1, 3, 1, 0, 3, 3, 3, 0
 };
 
+//from https://github.com/fogleman/nes/blob/master/nes/cpu.go
 uint8_t instructionModes[256] = {
     6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
     10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
@@ -765,6 +789,7 @@ uint8_t instructionModes[256] = {
     10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2
 };
 
+//from https://github.com/fogleman/nes/blob/master/nes/cpu.go
 char instructionNames[256][4] = {
     //FUT represents unimplemented op codes
     "BRK", "ORA", "FUT", "FUT", "FUT", "ORA", "ASL", "FUT",
@@ -801,6 +826,7 @@ char instructionNames[256][4] = {
     "SED", "SBC", "FUT", "FUT", "FUT", "SBC", "INC", "FUT"
 };
 
+//from https://github.com/fogleman/nes/blob/master/nes/cpu.go
 void (*opcodeToFunction[256])(CPU *c, OP_CODE_INFO *o) = {
     brk, ora, fut, fut, fut, ora, asl, fut,
     php, ora, asl, fut, fut, ora, asl, fut,
