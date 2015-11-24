@@ -6,7 +6,7 @@ int main() {
     CPU *c = getCPU();
     c->PC = 0x600;
     int argc = 2;
-    char *argv[2] = {"./testCPU", "../hexdump/fibonacci"};
+    char *argv[2] = {"./testCPU", "../hexdump/snake"};
     int16_t end = load_program(argc, argv, c->addressSpace, c->PC);
     if (c->PC == end) {
         printf("testFib failed\n");

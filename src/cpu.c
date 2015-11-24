@@ -36,6 +36,9 @@ CPU * getCPU(){
     //set bit 5 of status register to 1
     //to match specifications
     setRegBit(c, STATUS, 5, 1);
+    //initialize stack pointer to 256 (it grows downwards
+    //towards zero)
+    setRegByte(c, STACK, 0xFF);
     return c;
 }
 
@@ -62,13 +65,39 @@ void print(CPU *c){
     printf("SVUBDIZC\n");
     printf("%s\n",getStatus(c));
     printf("STACK REG: ");
-    printf("%d\n", c->regs[STACK]);
+    uint8_t stackVal = 0xFF & c->regs[STACK];
+    printf("%x\n", stackVal);
     printf("ACCUM REG: ");
-    printf("%d\n", c->regs[ACCUM]);
+    uint8_t accumVal = 0xFF & c->regs[ACCUM];
+    printf("%x\n", accumVal);
     printf("IND_X REG: ");
-    printf("%d\n", c->regs[IND_X]);
+    uint8_t xVal = 0xFF & c->regs[IND_X];
+    printf("%x\n", xVal);
     printf("IND_Y REG: ");
-    printf("%d\n", c->regs[IND_Y]);
+    uint8_t yVal = 0xFF & c->regs[IND_Y];
+    printf("%x\n", yVal);
+    //printAddressSpace(c, 0, 0xFF);
+}
+
+void printAddressLine(CPU *c, uint16_t beg){
+    //prints 16 hex vals starting from beg
+    uint16_t counter = beg;
+    while(counter < (beg + 16) && counter < 65536){
+        printf(" %02x", c->addressSpace[counter]);
+        counter++;
+    }
+    printf("\n");
+}
+
+void printAddressSpace(CPU *c, uint16_t beg, uint16_t end){
+    //prints address space from beg to end
+    //prints 16 8-bit vals at a time as hex
+    uint16_t counter = beg;
+    while(counter < end){
+        printf("%02x: ",counter);
+        printAddressLine(c, counter);
+        counter += 16;
+    }
 }
 
 char *getStatus(CPU *c){
@@ -194,6 +223,7 @@ void run_ops(CPU *c, int16_t end) {
     while (c->PC < end){
         run_op(c);
         print(c);
+        printAddressSpace(c,0,0x2F);
         wait();
     }
 }
@@ -218,7 +248,16 @@ void run_op(CPU *c){
             assert(0);
             break;
         case modeAbsolute:
-            assert(0);
+            //piece together 16 bit address from 2 bytes
+            //following op code
+            {
+            //curly braces to allow for variable declaration
+            //inside of case statement
+            uint8_t lowerByte = c->addressSpace[c->PC+1];
+            uint8_t upperByte = c->addressSpace[c->PC+2];
+            uint16_t address = (upperByte << 8) | lowerByte;
+            o = getOP_CODE_INFO(0, address, mode);
+            }
             break;
         case modeAbsoluteX:
             assert(0);
@@ -270,10 +309,26 @@ void run_op(CPU *c){
 }
 
 /* STACK OPERATIONS HERE */
-void PUSH( __attribute__ ((unused)) CPU *c, 
-        __attribute__ ((unused)) OP_CODE_INFO *o, 
-        __attribute__ ((unused)) int8_t operand){
-    //TODO: implement pushing operand onto stack
+void PUSH(CPU *c, int8_t operand){
+    uint8_t stackVal = getRegByte(c, STACK);
+    //0x0100 hardcoded in because stack
+    //lives in 0x0100 to 0x01FF area of 
+    //memory
+    uint16_t address = 0x0100 | stackVal;
+    write(c, address, operand);
+    uint8_t newStackVal = stackVal - 1;
+    setRegByte(c, STACK, newStackVal);
+}
+
+int8_t PULL(CPU *c){
+    uint8_t stackVal = getRegByte(c, STACK);
+    uint8_t newStackVal = stackVal + 1;
+    setRegByte(c, STACK, newStackVal);
+    //0x0100 hardcoded in because stack
+    //lives in 0x0100 to 0x01FF area of 
+    //memory
+    uint16_t address = 0x0100 | newStackVal;
+    return read(c, address);
 }
 
 /* OP CODE IMPLEMENTATIONS HERE */
@@ -395,10 +450,10 @@ void bpl(CPU *c, OP_CODE_INFO *o){
 // Force Break
 void brk(CPU *c, OP_CODE_INFO *o){
     (c->PC)++; // this could be between 0 and 3.
-    PUSH(c, o, (c->PC >> 8) & 0xff); // Push return address onto the stack.
-    PUSH(c, o, c->PC & 0xff); // (push Program Counter AND 0xFF)
+    PUSH(c, (c->PC >> 8) & 0xff); // Push return address onto the stack.
+    PUSH(c, c->PC & 0xff); // (push Program Counter AND 0xFF)
     setFlag(c, B, 1);
-    PUSH(c, o, getRegByte(c, STATUS)); // (push status register onto top of stack)
+    PUSH(c, getRegByte(c, STATUS)); // (push status register onto top of stack)
     setFlag(c, D, 1);
     // PC = (LOAD(0xFFFE) | (LOAD(0xFFFF) << 8)); change PC
 }
@@ -540,9 +595,10 @@ void jsr(CPU *c, OP_CODE_INFO *o){
     //STACK holds eight bit values
     //so we push the 16 bit address
     //onto the stack in two parts
-    PUSH(c, o, ((c->PC)>>8) & 0xFF);
-    PUSH(c, o, c->PC & 0xFF);
-    c->PC = o->operand;
+    PUSH(c, ((c->PC)>>8) & 0xFF);
+    PUSH(c, c->PC & 0xFF);
+    printf("JSR ADDR:%x\n",o->address);
+    c->PC = o->address;
 }
 
 //Load value into accumulator
@@ -594,22 +650,33 @@ void ora(CPU *c, OP_CODE_INFO *o){
 
 // Push accumulator onto stack
 void pha(CPU *c, OP_CODE_INFO *o){
-    PUSH(c, o, getRegByte(c, ACCUM));
+    PUSH(c, getRegByte(c, ACCUM));
 }
 
 // Push status register onto stack
 void php(CPU *c, OP_CODE_INFO *o){
-    PUSH(c, o, getRegByte(c, STATUS));
+    PUSH(c, getRegByte(c, STATUS));
 }
 
 // Pull accumulator from stack
 void pla(CPU *c, OP_CODE_INFO *o){
+    assert(0);
     // setRegByte(c, ACCUM, PULL(c));
 }
 
 // Pull status register from stack
 void plp(CPU *c, OP_CODE_INFO *o){
+    assert(0);
     // setRegByte(c, STATUS, PULL(c));
+}
+
+void rts(CPU *c, OP_CODE_INFO *o){
+    int8_t lowerByte = PULL(c);
+    int8_t upperByte = PULL(c);
+    //add 1 to address before we jump PC to it
+    //in order to resume program at correct place
+    uint16_t address = ((upperByte << 8) | lowerByte) + 1;
+    c->PC = address;
 }
 
 // Subtract operand from accumulator with borrow
@@ -689,11 +756,6 @@ void rol(CPU *c, OP_CODE_INFO *o){
 }
 
 void ror(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
-}
-
-void rts(CPU *c, OP_CODE_INFO *o){
     printf("Called unimplemented function!");
     assert(0);
 }
