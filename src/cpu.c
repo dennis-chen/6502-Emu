@@ -76,14 +76,13 @@ void print(CPU *c){
     printf("IND_Y REG: ");
     uint8_t yVal = 0xFF & c->regs[IND_Y];
     printf("%x\n", yVal);
-    //printAddressSpace(c, 0, 0xFF);
 }
 
 void printAddressLine(CPU *c, uint16_t beg){
     //prints 16 hex vals starting from beg
     uint16_t counter = beg;
     while(counter < (beg + 16) && counter < 65536){
-        printf(" %02x", c->addressSpace[counter]);
+        printf(" %02x", c->addressSpace[counter]&0xFF);
         counter++;
     }
     printf("\n");
@@ -94,7 +93,7 @@ void printAddressSpace(CPU *c, uint16_t beg, uint16_t end){
     //prints 16 8-bit vals at a time as hex
     uint16_t counter = beg;
     while(counter < end){
-        printf("%02x: ",counter);
+        printf("%03x: ",counter);
         printAddressLine(c, counter);
         counter += 16;
     }
@@ -223,7 +222,7 @@ void run_ops(CPU *c, int16_t end) {
     while (c->PC < end){
         run_op(c);
         print(c);
-        printAddressSpace(c,0,0x2F);
+        printAddressSpace(c,0x000,0x200);
         wait();
     }
 }
@@ -253,6 +252,7 @@ void run_op(CPU *c){
             {
             //curly braces to allow for variable declaration
             //inside of case statement
+            printf("Absolute!\n");
             uint8_t lowerByte = c->addressSpace[c->PC+1];
             uint8_t upperByte = c->addressSpace[c->PC+2];
             uint16_t address = (upperByte << 8) | lowerByte;
@@ -266,7 +266,9 @@ void run_op(CPU *c){
             assert(0);
             break;
         case modeAccumulator:
-            assert(0);
+            address = 0; //ADDRESS IS NOT APPLICABLE IN THIS MODE
+            operand = getRegByte(c,ACCUM);
+            o = getOP_CODE_INFO(operand, address, mode);
             break;
         case modeImmediate:
             address = c->PC + 1;
@@ -278,18 +280,37 @@ void run_op(CPU *c){
             o = getOP_CODE_INFO(0, address, mode);
             break;
         case modeIndexedIndirect:
-            assert(0);
+            {
+                uint16_t immediateVal = c->addressSpace[c->PC + 1];
+                uint16_t xVal = getRegByte(c,IND_X);
+                uint8_t lowerByte = c->addressSpace[immediateVal+xVal];
+                uint8_t upperByte = c->addressSpace[immediateVal+xVal+1];
+                address = (upperByte << 8) | lowerByte;
+                operand = c->addressSpace[address];
+                o = getOP_CODE_INFO(0, address, mode);
+            }
             break;
         case modeIndirect:
             assert(0);
             break;
         case modeIndirectIndexed:
-            assert(0);
+            {
+                uint16_t immediateVal = c->addressSpace[c->PC + 1];
+                uint8_t lowerByte = c->addressSpace[immediateVal];
+                uint8_t upperByte = c->addressSpace[immediateVal+1];
+                uint16_t yVal = getRegByte(c,IND_Y);
+                address = ((upperByte << 8) | lowerByte) + yVal;
+                operand = c->addressSpace[address];
+                o = getOP_CODE_INFO(0, address, mode);
+            }
             break;
         case modeRelative:
             //for branching within +-128 
-            address = c->PC + c->addressSpace[c->PC + 1];
-            o = getOP_CODE_INFO(0, address, mode);
+            {
+                int16_t offset = c->addressSpace[c->PC + 1];
+                address = c->PC + 2 + offset;
+                o = getOP_CODE_INFO(0, address, mode);
+            }
             break;
         case modeZeroPage:
             address = 0x00FF & c->addressSpace[c->PC + 1];
@@ -297,7 +318,13 @@ void run_op(CPU *c){
             o = getOP_CODE_INFO(operand, address, mode);
             break;
         case modeZeroPageX:
-            assert(0);
+            {
+                address = 0x00FF & c->addressSpace[c->PC + 1];
+                int8_t xVal = getRegByte(c,IND_X);
+                address += xVal;
+                operand = c->addressSpace[address];
+                o = getOP_CODE_INFO(operand, address, mode);
+            }
             break;
         case modeZeroPageY:
             assert(0);
@@ -595,9 +622,10 @@ void jsr(CPU *c, OP_CODE_INFO *o){
     //STACK holds eight bit values
     //so we push the 16 bit address
     //onto the stack in two parts
-    PUSH(c, ((c->PC)>>8) & 0xFF);
-    PUSH(c, c->PC & 0xFF);
-    printf("JSR ADDR:%x\n",o->address);
+    uint8_t upperByte = ((c->PC)>>8) & 0xFF;
+    uint8_t lowerByte = c->PC;
+    PUSH(c, upperByte);
+    PUSH(c, lowerByte);
     c->PC = o->address;
 }
 
@@ -671,11 +699,12 @@ void plp(CPU *c, OP_CODE_INFO *o){
 }
 
 void rts(CPU *c, OP_CODE_INFO *o){
-    int8_t lowerByte = PULL(c);
-    int8_t upperByte = PULL(c);
+    uint8_t lowerByte = PULL(c);
+    uint8_t upperByte = PULL(c);
     //add 1 to address before we jump PC to it
     //in order to resume program at correct place
     uint16_t address = ((upperByte << 8) | lowerByte) + 1;
+    printf("rts returning to: %x\n",address);
     c->PC = address;
 }
 
