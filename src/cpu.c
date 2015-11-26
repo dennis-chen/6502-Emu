@@ -2,6 +2,7 @@
 #include "opcodes.h"
 #include "load_prog.h"
 #include "gfx.h"
+#include "keyboard.h"
 
 /* sets a single bit of one of the eight bit 
  * registers on CPU to val */
@@ -266,14 +267,41 @@ void visualizeMemory(CPU *c){
     gfx_flush();
 }
 
+void getKeyboardInput(CPU *c){
+    //reads keyboard input and
+    //sets memory location $ff
+    //to match keyboard input
+    int dir = getDirection();
+    switch(dir){
+        case 0:
+            //printf("left");
+            c->addressSpace[0xff] = 0x61;
+            break;
+        case 1:
+            //printf("right");
+            c->addressSpace[0xff] = 0x64;
+            break;
+        case 2:
+            //printf("up");
+            c->addressSpace[0xff] = 0x77;
+            break;
+        case 3:
+            //printf("down");
+            c->addressSpace[0xff] = 0x73;
+            break;
+    }
+}
+
 /* RUN PROGRAM IN MEMORY */
 void run_ops(CPU *c, int16_t end) {
     initializegfx();
+    char k;
     //TODO: line below for debugging only, remove when done
     c->addressSpace[0xFF] = 0x64; //set direction key to be right
     while (c->PC < end){
-        visualizeMemory(c);
+        getKeyboardInput(c);
         run_op(c);
+        visualizeMemory(c);
         print(c);
         printAddressSpace(c,0x400,0x420);
         //wait();
@@ -632,13 +660,13 @@ void cpy(CPU *c, OP_CODE_INFO *o){
     setFlag(c, Z, diff ? 0 : 1);
 }
 
-//Decrement accum by 1
+//Decrement byte at specified address by 1
 void dec(CPU *c, OP_CODE_INFO *o){
-    uint8_t accumVal = getRegByte(c, ACCUM);
-    uint8_t res = accumVal - 1;
+    uint8_t operand = o->operand;
+    uint8_t res = operand - 1;
     setSign(c,res);
     setZero(c,res);
-    setRegByte(c, ACCUM, res);
+    c->addressSpace[o->address] = res;
 }
 
 //Decrement X index by 1
@@ -672,9 +700,6 @@ void inc(CPU *c, OP_CODE_INFO *o){
     uint8_t res = operand + 1;
     setSign(c,res);
     setZero(c,res);
-    printf("operand:%x\n",operand);
-    printf("res:%x\n",res);
-    printf("address:%x\n",o->address);
     c->addressSpace[o->address] = res;
 }
 
@@ -795,7 +820,6 @@ void rts(CPU *c, OP_CODE_INFO *o){
     //add 1 to address before we jump PC to it
     //in order to resume program at correct place
     uint16_t address = ((upperByte << 8) | lowerByte) + 1;
-    printf("rts returning to: %x\n",address);
     c->PC = address;
 }
 
