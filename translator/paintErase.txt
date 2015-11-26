@@ -1,0 +1,68 @@
+define appleL         $00 ; screen location of apple, low byte
+define appleH         $01 ; screen location of apple, high byte
+define snakeHeadH     $11 ; screen location of snake head, high byte
+define snakeBodyStart $12 ; start of snake body byte pairs
+define snakeDirection $02 ; direction (possible values are below)
+
+; Directions (each using a separate bit)
+define movingUp      1
+define movingRight   2
+define movingDown    4
+define movingLeft    8
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+define snakeLength    $03 ; snake length, in bytes
+define snakeHeadL     $10 ; screen location of snake head, low byte
+
+jsr initSnake
+jsr drawSnake
+jsr eraseSnake
+jmp end
+
+
+initSnake:
+  lda #movingRight  ;start direction
+  sta snakeDirection
+
+  lda #4  ;start length (2 segments)
+  sta snakeLength
+  
+  lda #$11
+  sta snakeHeadL
+  
+  lda #$10
+  sta snakeBodyStart
+  
+  lda #$0f
+  sta $14 ; body segment 1
+  
+  lda #$04
+  sta snakeHeadH
+  sta $13 ; body segment 1
+  sta $15 ; body segment 2
+  rts
+
+drawSnake: 
+  ldx snakeLength
+  lda #$ff
+  sta (snakeHeadL,x) ; paint end of tail
+
+  ldx #0
+  lda #1
+  sta (snakeHeadL,x) ; paint head
+  rts
+
+eraseSnake:
+  ldx snakeLength
+  lda #0
+  sta (snakeHeadL,x) ; erase end of tail
+
+  ldx #0
+  lda #0
+  sta (snakeHeadL,x) ; erase head
+  rts
+
+end:
+  nop

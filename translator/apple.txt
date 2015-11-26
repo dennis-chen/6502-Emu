@@ -1,0 +1,27 @@
+;initializes and draws apple
+define appleL         $00
+define appleH         $01
+
+jsr generateApplePosition
+jsr drawApple
+jsr end
+
+generateApplePosition:
+  lda $fe
+  sta appleL
+  ;load a new random number from 2 to 5 into $01
+  lda $fe
+  and #$03 ;mask out lowest 2 bits
+  clc
+  adc #2
+  sta appleH
+  rts
+
+drawApple:
+  ldy #0
+  lda #$ff
+  sta (appleL),y
+  rts
+
+end:
+  nop

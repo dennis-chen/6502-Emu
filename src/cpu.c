@@ -1,6 +1,7 @@
 #include "cpu.h"
 #include "opcodes.h"
 #include "load_prog.h"
+#include "gfx.h"
 
 /* sets a single bit of one of the eight bit 
  * registers on CPU to val */
@@ -217,13 +218,65 @@ void wait() {
     while ((enter = getchar()) != '\n') { /* wait until enter is pressed */ }
 }
 
+void drawPoint(int x, int y){
+    //draws point onto 'pixel' (actually a 8 by 8 square)
+    int xMin = x * 8;
+    int xMax = x * 8 + 8;
+    int yMin = y * 8;
+    int yMax = y * 8 + 8;
+    int i;
+    int j;
+    for(i = xMin; i < xMax; i++){
+        for(j = yMin; j < yMax; j++){
+            gfx_point(i,j);
+        }
+    }
+}
+
+void initializegfx(){
+    int ysize = 256;
+    int xsize = 256;
+    gfx_open(xsize,ysize,"Snake");
+    gfx_color(255,255,255);
+    return;
+}
+
+void visualizeMemory(CPU *c){
+    //visualizes memory addresses $0200 to $05ff
+    //(32 by 32 bytes)
+    //as a 256 by 256 pixel square
+    int x = 0;
+    int y = 0;
+    int i;
+    for(i = 0x0200; i < 0x0600; i++){
+        uint8_t memVal = c->addressSpace[i];
+        if(memVal){
+            gfx_color(255,255,255);
+            drawPoint(x,y);
+        } else {
+            gfx_color(0,0,0);
+            drawPoint(x,y);
+        }
+        x++;
+        if(x == 32){
+            x = 0;
+            y++;
+        }
+    }
+    gfx_flush();
+}
+
 /* RUN PROGRAM IN MEMORY */
 void run_ops(CPU *c, int16_t end) {
+    initializegfx();
+    //TODO: line below for debugging only, remove when done
+    c->addressSpace[0xFF] = 0x64; //set direction key to be right
     while (c->PC < end){
+        visualizeMemory(c);
         run_op(c);
         print(c);
-        printAddressSpace(c,0x000,0x200);
-        wait();
+        printAddressSpace(c,0x400,0x420);
+        //wait();
     }
 }
 
@@ -250,20 +303,31 @@ void run_op(CPU *c){
             //piece together 16 bit address from 2 bytes
             //following op code
             {
-            //curly braces to allow for variable declaration
-            //inside of case statement
-            printf("Absolute!\n");
-            uint8_t lowerByte = c->addressSpace[c->PC+1];
-            uint8_t upperByte = c->addressSpace[c->PC+2];
-            uint16_t address = (upperByte << 8) | lowerByte;
-            o = getOP_CODE_INFO(0, address, mode);
+                //curly braces to allow for variable declaration
+                //inside of case statement
+                uint8_t lowerByte = c->addressSpace[c->PC+1];
+                uint8_t upperByte = c->addressSpace[c->PC+2];
+                uint16_t address = (upperByte << 8) | lowerByte;
+                o = getOP_CODE_INFO(0, address, mode);
             }
             break;
         case modeAbsoluteX:
-            assert(0);
+            {
+                uint8_t lowerByte = c->addressSpace[c->PC+1];
+                uint8_t upperByte = c->addressSpace[c->PC+2];
+                uint16_t address = (upperByte << 8) | lowerByte;
+                uint16_t xVal = getRegByte(c,IND_X);
+                o = getOP_CODE_INFO(0, address+xVal, mode);
+            }
             break;
         case modeAbsoluteY:
-            assert(0);
+            {
+                uint8_t lowerByte = c->addressSpace[c->PC+1];
+                uint8_t upperByte = c->addressSpace[c->PC+2];
+                uint16_t address = (upperByte << 8) | lowerByte;
+                uint16_t yVal = getRegByte(c,IND_Y);
+                o = getOP_CODE_INFO(0, address+yVal, mode);
+            }
             break;
         case modeAccumulator:
             address = 0; //ADDRESS IS NOT APPLICABLE IN THIS MODE
@@ -287,11 +351,19 @@ void run_op(CPU *c){
                 uint8_t upperByte = c->addressSpace[immediateVal+xVal+1];
                 address = (upperByte << 8) | lowerByte;
                 operand = c->addressSpace[address];
-                o = getOP_CODE_INFO(0, address, mode);
+                o = getOP_CODE_INFO(operand, address, mode);
             }
             break;
         case modeIndirect:
-            assert(0);
+            {
+                uint8_t lowerByte = c->addressSpace[c->PC+1];
+                uint8_t upperByte = c->addressSpace[c->PC+2];
+                uint16_t address = (upperByte << 8) | lowerByte;
+                uint8_t l = c->addressSpace[address];
+                uint8_t u = c->addressSpace[address+1];
+                uint16_t finalAddress = (u << 8) | l;
+                o = getOP_CODE_INFO(0, finalAddress, mode);
+            }
             break;
         case modeIndirectIndexed:
             {
@@ -301,7 +373,7 @@ void run_op(CPU *c){
                 uint16_t yVal = getRegByte(c,IND_Y);
                 address = ((upperByte << 8) | lowerByte) + yVal;
                 operand = c->addressSpace[address];
-                o = getOP_CODE_INFO(0, address, mode);
+                o = getOP_CODE_INFO(operand, address, mode);
             }
             break;
         case modeRelative:
@@ -481,8 +553,11 @@ void brk(CPU *c, OP_CODE_INFO *o){
     PUSH(c, c->PC & 0xff); // (push Program Counter AND 0xFF)
     setFlag(c, B, 1);
     PUSH(c, getRegByte(c, STATUS)); // (push status register onto top of stack)
-    setFlag(c, D, 1);
-    // PC = (LOAD(0xFFFE) | (LOAD(0xFFFF) << 8)); change PC
+    setFlag(c, I, 1);
+    uint8_t lowerByte = c->addressSpace[0xFFFE];
+    uint8_t upperByte = c->addressSpace[0xFFFF];
+    uint16_t returnAddress = (upperByte << 8) | lowerByte;
+    //c->PC = returnAddress;
 }
 
 // Branch if overflow clear
@@ -591,13 +666,16 @@ void fut(CPU *c, OP_CODE_INFO *o){
     assert(0);
 }
 
-//Increment accum by 1
+//Increments specified address by 1
 void inc(CPU *c, OP_CODE_INFO *o){
-    uint8_t accumVal = getRegByte(c, ACCUM);
-    uint8_t res = accumVal + 1;
+    uint8_t operand = o->operand;
+    uint8_t res = operand + 1;
     setSign(c,res);
     setZero(c,res);
-    setRegByte(c, ACCUM, res);
+    printf("operand:%x\n",operand);
+    printf("res:%x\n",res);
+    printf("address:%x\n",o->address);
+    c->addressSpace[o->address] = res;
 }
 
 //Increment X index by 1
@@ -607,6 +685,15 @@ void inx(CPU *c, OP_CODE_INFO *o){
     setSign(c,res);
     setZero(c,res);
     setRegByte(c, IND_X, res);
+}
+
+//Increment Y index by 1
+void iny(CPU *c, OP_CODE_INFO *o){
+    uint8_t yVal = getRegByte(c, IND_Y);
+    uint8_t res = yVal + 1;
+    setSign(c,res);
+    setZero(c,res);
+    setRegByte(c, IND_Y, res);
 }
 
 //Jump PC to 16 bit operand
@@ -671,8 +758,10 @@ void nop(CPU *c, OP_CODE_INFO *o){}
 // OR memory with accumulator
 void ora(CPU *c, OP_CODE_INFO *o){
     int8_t src = o->operand | getRegByte(c, ACCUM);
-    setFlag(c, Z, src);
-    setFlag(c, S, src);
+    printf("FUNCTION NOT IMPLEMENTED CORRECTLY!");
+    assert(0);
+    //setFlag(c, Z, src);
+    //setFlag(c, S, src);
     setRegByte(c, ACCUM, src);
 }
 
@@ -688,8 +777,10 @@ void php(CPU *c, OP_CODE_INFO *o){
 
 // Pull accumulator from stack
 void pla(CPU *c, OP_CODE_INFO *o){
-    assert(0);
-    // setRegByte(c, ACCUM, PULL(c));
+    int8_t accumVal = PULL(c);
+    setRegByte(c, ACCUM, accumVal);
+    setSign(c,accumVal);
+    setZero(c,accumVal);
 }
 
 // Pull status register from stack
@@ -745,6 +836,11 @@ void stx(CPU *c, OP_CODE_INFO *o){
     write(c, o->address, getRegByte(c,IND_X));
 }
 
+// Store Y reg into memory
+void sty(CPU *c, OP_CODE_INFO *o){
+    write(c, o->address, getRegByte(c,IND_Y));
+}
+
 // Transfer accumulator to Y reg
 void tay(CPU *c, OP_CODE_INFO *o){
     int8_t accumVal = getRegByte(c,ACCUM);
@@ -767,6 +863,14 @@ void txa(CPU *c, OP_CODE_INFO *o){
     setSign(c,xVal);
     setZero(c,xVal);
     setRegByte(c,ACCUM,xVal);
+}
+
+// Transfer accumulator to x
+void tax(CPU *c, OP_CODE_INFO *o){
+    int8_t accumVal = getRegByte(c,ACCUM);
+    setSign(c,accumVal);
+    setZero(c,accumVal);
+    setRegByte(c,IND_X,accumVal);
 }
 
 void eor(CPU *c, OP_CODE_INFO *o){
@@ -794,27 +898,12 @@ void sei(CPU *c, OP_CODE_INFO *o){
     assert(0);
 }
 
-void sty(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
-}
-
 void txs(CPU *c, OP_CODE_INFO *o){
     printf("Called unimplemented function!");
     assert(0);
 }
 
-void tax(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
-}
-
 void tsx(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
-}
-
-void iny(CPU *c, OP_CODE_INFO *o){
     printf("Called unimplemented function!");
     assert(0);
 }

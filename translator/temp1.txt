@@ -1,0 +1,14 @@
+LDA #$02
+STA $02
+LDA #$04
+STA $03
+LDA #$11
+STA $10
+LDA #$10
+STA $12
+LDA #$0f
+STA $14
+LDA #$04
+STA $11
+STA $13
+STA $15
