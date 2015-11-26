@@ -1,3 +1,4 @@
+#include <time.h>
 #include "cpu.h"
 #include "opcodes.h"
 #include "load_prog.h"
@@ -251,13 +252,28 @@ void visualizeMemory(CPU *c){
     int i;
     for(i = 0x0200; i < 0x0600; i++){
         uint8_t memVal = c->addressSpace[i];
-        if(memVal){
+        if(memVal == 1){
+            //in the snake game a memory val
+            //of 1 represents a white color.
+            //this special if statement is
+            //because 1 needs to be mapped
+            //to (255,255,255) in RGB
             gfx_color(255,255,255);
-            drawPoint(x,y);
+        } else if (memVal > 0){
+            //this is to convert between
+            //a memVal between 0-255 and
+            //three 0-255 vals representing R,G,B
+            //red is the first 3 bits
+            uint8_t red = memVal & 0xE0;
+            //blue is the next 3 bits
+            uint8_t blue = (memVal << 3) & 0xE0;
+            //green is the last 2
+            uint8_t green = (memVal << 6) & 0xE0;
+            gfx_color(red,blue,green);
         } else {
             gfx_color(0,0,0);
-            drawPoint(x,y);
         }
+        drawPoint(x,y);
         x++;
         if(x == 32){
             x = 0;
@@ -292,19 +308,35 @@ void getKeyboardInput(CPU *c){
     }
 }
 
+void getRandomVal(CPU *c){
+    //loads a random byte into $FE of
+    //the cpu's memory (this is specifically
+    //to get the snake game implementation
+    //working and is NOT something the 6502
+    //actually ever does
+    uint8_t randNum = rand();
+    c->addressSpace[0xfe] = randNum;
+}
+
+void initializerng(){
+    //initialize random number generator
+    srand(time(NULL));
+}
+
 /* RUN PROGRAM IN MEMORY */
 void run_ops(CPU *c, int16_t end) {
     initializegfx();
+    initializerng();
     char k;
     //TODO: line below for debugging only, remove when done
     c->addressSpace[0xFF] = 0x64; //set direction key to be right
     while (c->PC < end){
         getKeyboardInput(c);
+        getRandomVal(c);
         run_op(c);
         visualizeMemory(c);
-        print(c);
-        printAddressSpace(c,0x400,0x420);
-        //wait();
+        //print(c);
+        //printAddressSpace(c,0x400,0x420);
     }
 }
 
@@ -318,7 +350,7 @@ void run_op(CPU *c){
         assert(0);
     }
     OP_CODE_INFO *o;
-    printf("%s\n",instructionNames[opCode]);
+    //printf("%s\n",instructionNames[opCode]);
     uint8_t mode = instructionModes[opCode];
     uint16_t address;
     int8_t operand;
