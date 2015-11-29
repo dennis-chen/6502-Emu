@@ -870,6 +870,24 @@ static char * JMP1() {
     return 0;
 }
 
+static char * JSR1() {
+    CPU *c = getCPU();
+    c->PC = 0xCFEE;
+    uint16_t address = 0xABAB;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0,address,modeImmediate);
+    jsr(c,o);
+    uint8_t stackPointer = getRegByte(c,STACK);
+    mu_assert("JSR1 err, Stack Pointer != 0xFD", stackPointer == 0xFD);
+    mu_assert("JSR1 err, PC != 0xABAB", c->PC == 0xABAB);
+    uint8_t returnAddressLower = read(c,0x01FE);
+    uint8_t returnAddressUpper = read(c,0x01FF);
+    uint16_t returnAddress = (returnAddressUpper << 8) | returnAddressLower;
+    mu_assert("JSR1 err, Return Address != 0xCFED", returnAddress == 0xCFED);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
 static char * LSR1() {
     //test LSR and save to memory address
     CPU *c = getCPU();
@@ -935,6 +953,21 @@ static char * NOP1() {
     return 0;
 }
 
+static char * RTS1() {
+    CPU *c = getCPU();
+    c->PC = 0xCFEE;
+    uint16_t address = 0xABAB;
+    OP_CODE_INFO *o1 = getOP_CODE_INFO(0,address,modeImmediate);
+    jsr(c,o1);
+    OP_CODE_INFO *o2 = getOP_CODE_INFO(0,0,modeImmediate);
+    rts(c,o2);
+    mu_assert("RTS1 err, PC != 0xCFEE", c->PC == 0xCFEE);
+    freeOP_CODE_INFO(o1);
+    freeOP_CODE_INFO(o2);
+    free(c);
+    return 0;
+}
+
 static char * all_tests() {
     mu_run_test(ADC1);
     mu_run_test(ADC2);
@@ -971,6 +1004,7 @@ static char * all_tests() {
     mu_run_test(INX1);
     mu_run_test(INX2);
     mu_run_test(JMP1);
+    mu_run_test(JSR1);
     mu_run_test(LDA1);
     mu_run_test(LDA2);
     mu_run_test(LDX1);
@@ -980,6 +1014,7 @@ static char * all_tests() {
     mu_run_test(LSR1);
     mu_run_test(LSR2);
     mu_run_test(NOP1);
+    mu_run_test(RTS1);
     mu_run_test(SBC1);
     mu_run_test(SBC2);
     mu_run_test(SBC3);
