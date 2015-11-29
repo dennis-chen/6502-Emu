@@ -77,6 +77,11 @@ void gfx_open( int width, int height, const char *title )
     }
 }
 
+void gfx_rectangle( int x, int y, int width, int height )
+{
+    XDrawRectangle(gfx_display,gfx_window,gfx_gc,x,y,width,height);
+}
+
 /* Draw a single point at (x,y) */
 
 void gfx_point( int x, int y )
