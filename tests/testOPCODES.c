@@ -343,14 +343,14 @@ static char * CLC1() {
 }
 
 static char * DEC1() {
-    //decrement X reg by 1 with neg twos complement val
-    //in X reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
-    setRegByte(c,ACCUM,-34);
+    uint16_t address = 0xEFF;
+    int8_t operand = -34;
+    write(c,address,operand);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,modeImmediate);
     dec(c,o);
-    int8_t accumVal = getRegByte(c,ACCUM);
-    mu_assert("DEC1 err, ACCUM reg != -35", accumVal == -35);
+    int8_t accumVal = read(c,address);
+    mu_assert("DEC1 err, 0xEFF address != -35", accumVal == -35);
     mu_run_test_with_args(testRegStatus,c,"10100000",
             "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
     freeOP_CODE_INFO(o);
@@ -359,13 +359,13 @@ static char * DEC1() {
 }
 
 static char * DEC2() {
-    //decrement X reg by 1 with positive twos complement val
-    //in X reg
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
-    setRegByte(c,ACCUM,1);
+    uint16_t address = 0xEFF;
+    int8_t operand = 1;
+    write(c,address,operand);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,modeImmediate);
     dec(c,o);
-    int8_t accumVal = getRegByte(c,ACCUM);
+    int8_t accumVal = read(c,address);
     mu_assert("DEC2 err, ACCUM reg != 0", accumVal == 0);
     mu_run_test_with_args(testRegStatus,c,"00100010",
             "          NVUBDIZC    NVUBDIZC\nCLC1 err, %s != %s");
@@ -801,10 +801,12 @@ static char * CPX2() {
 
 static char * INC1() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
-    setRegByte(c,ACCUM,-1);
+    uint16_t address = 0xEFF;
+    int8_t operand = -1;
+    write(c,address,operand);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,modeImmediate);
     inc(c,o);
-    int8_t accumVal = getRegByte(c,ACCUM);
+    int8_t accumVal = read(c,address);
     mu_assert("INC1 err, ACCUM reg != 0", accumVal == 0);
     mu_run_test_with_args(testRegStatus,c,"00100010",
             "          NVUBDIZC    NVUBDIZC\nINC1 err, %s != %s");
@@ -815,10 +817,12 @@ static char * INC1() {
 
 static char * INC2() {
     CPU *c = getCPU();
-    OP_CODE_INFO *o = getOP_CODE_INFO(0,0,modeImmediate);
-    setRegByte(c,ACCUM,-103);
+    uint16_t address = 0xEFF;
+    int8_t operand = -103;
+    write(c,address,operand);
+    OP_CODE_INFO *o = getOP_CODE_INFO(operand,address,modeImmediate);
     inc(c,o);
-    int8_t accumVal = getRegByte(c,ACCUM);
+    int8_t accumVal = read(c,address);
     mu_assert("INC2 err, ACCUM reg != -102", accumVal == -102);
     mu_run_test_with_args(testRegStatus,c,"10100000",
             "          NVUBDIZC    NVUBDIZC\nINC2 err, %s != %s");
