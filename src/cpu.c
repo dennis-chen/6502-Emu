@@ -1,6 +1,6 @@
 #include <time.h>
 #include "cpu.h"
-#include "opcodes.h"
+//#include "opcodes.h"
 #include "load_prog.h"
 #include "gfx.h"
 #include "keyboard.h"
@@ -27,7 +27,8 @@ int8_t getRegBit(CPU *c, REG name, int8_t bit){
 /* CPU initializer */
 CPU * getCPU(){
     CPU *c = malloc(sizeof(CPU));
-    c-> PC = 0;
+    //programs start at 0x600 in memory
+    c->PC = 0x600;
     //initialize 8 bit registers
     int NUM_REG = 5;
     int8_t *r = calloc(NUM_REG,sizeof(int8_t));
