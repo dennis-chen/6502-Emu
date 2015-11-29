@@ -10,7 +10,6 @@ Version 2, 9/23/2011 - Fixes a bug that could result in jerky animation.
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include "gfx.h"
 
 /*
