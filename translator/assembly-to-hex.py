@@ -19,18 +19,23 @@ def stripCommentsAndWhitespace(line):
 def getLineDict(line):
     #returns dict of data and length for a line
     l = stripCommentsAndWhitespace(line)
-    splitLine = l.split(' ')
+    splitLine = filter(None, l.split(' '))
+    #print(splitLine)
     arguments = len(splitLine)
+    #print("Arguments", splitLine)
     return {'data':splitLine,'length':arguments}
 
-def findAndReplaceLabels(lineDict,labels):
+def findAndReplaceLabelsAndVariables(lineDict,labels,variables):
     #adds things to labels dictionary based on lineDict
     bytePosition = lineDict['bytePosition']
     arguments = lineDict['length']
     splitLine = lineDict['data']
     twoByteAddress = re.compile('\$[0-9]{4}')
-    if (arguments == 3 and splitLine[0].endswith(':')):
-        labels[splitLine[0][:-1]] = bytePosition
+    if (arguments == 3):
+        if (splitLine[0].endswith(':')):
+            labels[splitLine[0][:-1]] = bytePosition
+        elif (splitLine[0] == 'define'):
+            variables[splitLine[1]] = splitLine[2];
     elif (arguments == 2):
         # label and implicitly addressed opcode
         if (splitLine[0].endswith(':')):
@@ -49,11 +54,16 @@ def getByteSize(lineDict):
     arguments = lineDict['length']
     splitLine = lineDict['data']
     twoByteAddress = re.compile('\$[0-9]{4}')
-    if (arguments == 3 and splitLine[0].endswith(':')):
-        if (twoByteAddress.search(splitLine[2])):
-            return 3
+    # label declaration
+    if (arguments == 3):
+        if (splitLine[0].endswith(':')):
+            if (twoByteAddress.search(splitLine[2])):
+                return 3
+            else:
+                return 2
         else:
-            return 2
+            # variable declaration
+            return 0
     elif (arguments == 2):
         # label and implicitly addressed opcode
         if (splitLine[0].endswith(':')):
@@ -73,9 +83,11 @@ def getByteSize(lineDict):
         # just an implicitly addressed opcode
         else:
             return 1
+    elif (arguments == 0):
+        return 0
     else:
-        print "Number arguments: " + str(arguments)
-        raise ValueError("Number of arguments not between 1 and 3!")
+        print("Number arguments: " + str(arguments))
+        raise ValueError("Number of arguments not between 0 and 3!")
 
 def parseLines(f):
     #returns parsedLines and labels, where parsedLines is a 
@@ -85,80 +97,106 @@ def parseLines(f):
     bytePosition = 0
     parsedLines = []
     labels = {}
+    variables = {}
     for line in f:
         stripped = line.strip()
         if stripped: #stripped line is not empty
-            print stripped
+            #print(stripped)
             lineDict = getLineDict(stripped)
             lineDict['bytePosition'] = bytePosition
-            findAndReplaceLabels(lineDict,labels)
+            findAndReplaceLabelsAndVariables(lineDict,labels,variables)
             parsedLines.append(lineDict)
             bytePosition += getByteSize(lineDict)
-    return parsedLines, labels
+    return parsedLines, labels, variables
 
-def getHexFromLines(parsedLines,labels):
+def getHexFromLines(parsedLines,labels,variables):
+    print("Labels:", labels)
+    print("Variables:", variables)
     hexOutput = ""
     for line in parsedLines:
-        # take the labels out of lines
-        if (line['data'][0].endswith(':')):
-            line['length'] -= 1
-            line['data'] = line['data'][1:]
-        # only process lines that aren't just labels
         if(line['length'] > 0):
-            opcode = line['data'][0]
-            address = 'null'
-            if (line['length']) == 2:
-                address = line['data'][1]
-            if (opcode in opcodes.keys()):
-                # implicit
-                if (line['length'] == 1):
-                    hexOutput += (opcodes[opcode]['SNGL']) + ' '
-                elif (line['length'] == 2):
-                    # immediate
-                    if(address.startswith('#')):
-                        hexOutput += opcodes[opcode]['IMM'] + ' ' + address[2:] + ' '
-                    elif (address.startswith('(')):
-                        # indexed indirect
-                        if address[4] == ',':
-                            hexOutput += opcodes[opcode]['INDX'] + ' ' + address[2:4] + ' '
-                        # indirect index
-                        elif address[5] == ',':
-                            hexOutput += opcodes[opcode]['INDY'] + ' ' + address[2:4] + ' '
-                        # indirect
+            # take the labels out of lines
+            if (line['data'][0].endswith(':')):
+                line['length'] -= 1
+                line['data'] = line['data'][1:]
+            # only process lines that aren't just labels or variables
+            if(line['length'] > 0 and line['data'][0].lower() != 'define'):
+                opcode = line['data'][0].upper()
+                address = 'null'
+                if (line['length']) == 2:
+                    address = line['data'][1]
+                    # replace variables with their values
+                    for variable in variables.keys():
+                        if variable in address:
+                            address = address.replace(variable, variables[variable])
+                print("Opcode", opcode, "Address", address)
+                if (opcode in opcodes.keys()):
+                    # implicit
+                    if (line['length'] == 1):
+                        print((opcodes[opcode]['SNGL']) + ' ')
+                        hexOutput += (opcodes[opcode]['SNGL']) + ' '
+                    elif (line['length'] == 2):
+                        # immediate
+                        if(address.startswith('#')):
+                            print(opcodes[opcode]['IMM'] + ' ' + address[2:] + ' ')
+                            hexOutput += opcodes[opcode]['IMM'] + ' ' + address[2:] + ' '
+                        elif (address.startswith('(')):
+                            # indexed indirect
+                            if address[4] == ',':
+                                print(opcodes[opcode]['INDX'] + ' ' + address[2:4] + ' ')
+                                hexOutput += opcodes[opcode]['INDX'] + ' ' + address[2:4] + ' '
+                            # indirect index
+                            elif address[5] == ',':
+                                print(opcodes[opcode]['INDY'] + ' ' + address[2:4] + ' ')
+                                hexOutput += opcodes[opcode]['INDY'] + ' ' + address[2:4] + ' '
+                            # indirect
+                            else:
+                                print(opcodes[opcode]['IND'] + ' ' + address[4:6] + ' ' + address[2:4] + ' ')
+                                hexOutput += opcodes[opcode]['IND'] + ' ' + address[4:6] + ' ' + address[2:4] + ' '
+                        elif (address.startswith('$')):
+                            operandLength = len(address)
+                            # absolute X and Y
+                            if (operandLength == 7):
+                                mode = 'ABS' + address[6].upper()
+                                print(opcodes[opcode][mode] + ' ' + address[3:5] + ' ' + address[1:3] + ' ')
+                                hexOutput += opcodes[opcode][mode] + ' ' + address[3:5] + ' ' + address[1:3] + ' '
+                            # zero page
+                            elif (operandLength == 3):
+                                print(opcodes[opcode]['ZP'] + ' ' + address[1:] + ' ')
+                                hexOutput += opcodes[opcode]['ZP'] + ' ' + address[1:] + ' '
+                            # zero page X and Y
+                            elif (address[3] == ','):
+                                mode = 'ZP' + address[4].upper()
+                                print(opcodes[opcode][mode] + ' ' + address[1:3] + ' ')
+                                hexOutput += opcodes[opcode][mode] + ' ' + address[1:3] + ' '
+                            # absolute
+                            else:
+                                print(opcodes[opcode]['ABS'] + ' ' + address[3:] + ' ' + address[1:3] + ' ')
+                                hexOutput += opcodes[opcode]['ABS'] + ' ' + address[3:] + ' ' + address[1:3] + ' '
+                        elif (address in labels.keys()):
+                            # print ("we\'ve got a label")
+                            if (opcode[0] == "J"):
+                                # Jump to an absolute point (this doesn't account for indirect jumps)
+                                byteDiff = labels[address] - line['bytePosition'] - 2
+                                print(opcodes[opcode]['ABS'] + ' ' + toHex(byteDiff, 8)[2:] + ' ' )
+                                hexOutput += opcodes[opcode]['ABS'] + ' ' + toHex(byteDiff, 8)[2:] + ' ' 
+                            else:
+                            # relative addressing with label
+                                print(opcodes[opcode]['BRA'] + ' ' + toHex(byteDiff, 8)[2:] + ' ')
+                                byteDiff = labels[address] - line['bytePosition'] - 2
+                                hexOutput += opcodes[opcode]['BRA'] + ' ' + toHex(byteDiff, 8)[2:] + ' '
                         else:
-                            hexOutput += opcodes[opcode]['IND'] + ' ' + address[4:6] + ' ' + address[2:4] + ' '
-                    elif (address.startswith('$')):
-                        operandLength = len(address)
-                        # absolute X and Y
-                        if (operandLength == 7):
-                            mode = 'ABS' + address[6].upper()
-                            hexOutput += opcodes[opcode][mode] + ' ' + address[3:5] + ' ' + address[1:3] + ' '
-                        # zero page
-                        elif (operandLength == 3):
-                            hexOutput += opcodes[opcode]['ZP'] + ' ' + address[1:] + ' '
-                        # zero page X and Y
-                        elif (address[3] == ','):
-                            mode = 'ZP' + address[4].upper()
-                            hexOutput += opcodes[opcode][mode] + ' ' + address[1:3] + ' '
-                        # absolute
-                        else:
-                            hexOutput += opcodes[opcode]['ABS'] + ' ' + address[3:] + ' ' + address[1:3] + ' '
-                    elif (address in labels.keys()):
-                        # relative addressing with label
-                        byteDiff = labels[address] - line['bytePosition'] - 2
-                        hexOutput += opcodes[opcode]['BRA'] + ' ' + toHex(byteDiff, 8)[2:] + ' '
+                            raise ValueError('Problem with address in this line: ',line)
                     else:
-                        raise ValueError('Problem with address in this line: ',line)
+                        raise ValueError('Invalid line length')
                 else:
-                    raise ValueError('Invalid line length')
-            else:
-                raise ValueError('No opcode found')
+                    raise ValueError('No opcode found')
     return (hexOutput.strip())
 
 def assemblyToHex(f):
     #takes file handler for text file  with assembly and returns string of hex vals
-    parsedLines,labels = parseLines(f)
-    hexString = getHexFromLines(parsedLines,labels)
+    parsedLines,labels,variables = parseLines(f)
+    hexString = getHexFromLines(parsedLines,labels,variables)
     return hexString
     
 if __name__ == "__main__":
