@@ -10,17 +10,6 @@ void drawPoint(int x, int y){
     int cornerX = x * 8;
     int cornerY = y * 8;
     gfx_rectangle(cornerX,cornerY,8,8);
-    //int xMin = x * 8;
-    //int xMax = x * 8 + 8;
-    //int yMin = y * 8;
-    //int yMax = y * 8 + 8;
-    //int i;
-    //int j;
-    //for(i = xMin; i < xMax; i++){
-    //    for(j = yMin; j < yMax; j++){
-    //        gfx_point(i,j);
-    //    }
-    //}
 }
 
 void initializegfx(){
