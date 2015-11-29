@@ -460,7 +460,13 @@ void run_op(CPU *c){
             }
             break;
         case modeZeroPageY:
-            assert(0);
+            {
+                address = 0x00FF & c->addressSpace[c->PC + 1];
+                int8_t yVal = getRegByte(c,IND_Y);
+                address += yVal;
+                operand = c->addressSpace[address];
+                o = getOP_CODE_INFO(operand, address, mode);
+            }
             break;
     }
     c->PC += instructionSizes[opCode];
