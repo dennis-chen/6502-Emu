@@ -1,4 +1,4 @@
-#include <time.h> //to seed RNG
+#include <time.h> //to seed RNG and for sleeping in game loop
 #include "../src/load_prog.h"
 #include "../src/gfx.h"
 #include "../src/keyboard.h"
@@ -32,6 +32,7 @@ void visualizeMemory(CPU *c){
     //visualizes memory addresses $0200 to $05ff
     //(32 by 32 bytes)
     //as a 256 by 256 pixel square
+    gfx_clear();
     int x = 0;
     int y = 0;
     int i;
@@ -44,6 +45,7 @@ void visualizeMemory(CPU *c){
             //because 1 needs to be mapped
             //to (255,255,255) in RGB
             gfx_color(255,255,255);
+            drawPoint(x,y);
         } else if (memVal > 0){
             //this is to convert between
             //a memVal between 0-255 and
@@ -55,10 +57,8 @@ void visualizeMemory(CPU *c){
             //green is the last 2
             uint8_t green = (memVal << 6) & 0xE0;
             gfx_color(red,blue,green);
-        } else {
-            gfx_color(0,0,0);
-        }
-        drawPoint(x,y);
+            drawPoint(x,y);
+        } else {}
         x++;
         if(x == 32){
             x = 0;
@@ -111,11 +111,13 @@ void initializerng(){
 void runSnake(CPU *c, int16_t end) {
     initializegfx();
     initializerng();
+    int counter = 0;
     while (c->PC < end){
         getKeyboardInput(c);
         getRandomVal(c);
         run_op(c);
         visualizeMemory(c);
+        nanosleep((const struct timespec[]){{0, 50000L}}, NULL);
     }
 }
 
