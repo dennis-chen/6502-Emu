@@ -10,7 +10,6 @@ Version 2, 9/23/2011 - Fixes a bug that could result in jerky animation.
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include "gfx.h"
 
 /*
@@ -76,6 +75,16 @@ void gfx_open( int width, int height, const char *title )
         if (e.type == MapNotify)
             break;
     }
+}
+
+void gfx_rectangle( int x, int y, int width, int height )
+{
+    XFillRectangle(gfx_display,gfx_window,gfx_gc,x,y,width,height);
+}
+
+void gfx_rectangles( int x, int y, XRectangle *rectangles, int nRectangles)
+{
+    XFillRectangles(gfx_display,gfx_window,gfx_gc,rectangles,nRectangles);
 }
 
 /* Draw a single point at (x,y) */

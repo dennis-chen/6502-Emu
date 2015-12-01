@@ -16,6 +16,12 @@ void gfx_open( int width, int height, const char *title );
 /* Draw a point at (x,y) */
 void gfx_point( int x, int y );
 
+/* Draw a rectangle with top left corner x, y */
+void gfx_rectangle( int x, int y, int width, int height );
+
+/* Draw multiple rectangles */
+void gfx_rectangles( int x, int y, XRectangle *rectangles, int nRectangles);
+
 /* Draw a line from (x1,y1) to (x2,y2) */
 void gfx_line( int x1, int y1, int x2, int y2 );
 

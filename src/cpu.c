@@ -1,9 +1,4 @@
-#include <time.h>
 #include "cpu.h"
-#include "opcodes.h"
-#include "load_prog.h"
-#include "gfx.h"
-#include "keyboard.h"
 
 /* sets a single bit of one of the eight bit 
  * registers on CPU to val */
@@ -27,7 +22,8 @@ int8_t getRegBit(CPU *c, REG name, int8_t bit){
 /* CPU initializer */
 CPU * getCPU(){
     CPU *c = malloc(sizeof(CPU));
-    c-> PC = 0;
+    //programs start at 0x600 in memory
+    c->PC = 0x600;
     //initialize 8 bit registers
     int NUM_REG = 5;
     int8_t *r = calloc(NUM_REG,sizeof(int8_t));
@@ -214,132 +210,6 @@ void freeOP_CODE_INFO(OP_CODE_INFO *o){
     free(o);
 }
 
-void wait() {
-    char enter;
-    printf("Press enter to proceed...\n");
-    while ((enter = getchar()) != '\n') { /* wait until enter is pressed */ }
-}
-
-void drawPoint(int x, int y){
-    //draws point onto 'pixel' (actually a 8 by 8 square)
-    int xMin = x * 8;
-    int xMax = x * 8 + 8;
-    int yMin = y * 8;
-    int yMax = y * 8 + 8;
-    int i;
-    int j;
-    for(i = xMin; i < xMax; i++){
-        for(j = yMin; j < yMax; j++){
-            gfx_point(i,j);
-        }
-    }
-}
-
-void initializegfx(){
-    int ysize = 256;
-    int xsize = 256;
-    gfx_open(xsize,ysize,"Snake");
-    gfx_color(255,255,255);
-    return;
-}
-
-void visualizeMemory(CPU *c){
-    //visualizes memory addresses $0200 to $05ff
-    //(32 by 32 bytes)
-    //as a 256 by 256 pixel square
-    int x = 0;
-    int y = 0;
-    int i;
-    for(i = 0x0200; i < 0x0600; i++){
-        uint8_t memVal = c->addressSpace[i];
-        if(memVal == 1){
-            //in the snake game a memory val
-            //of 1 represents a white color.
-            //this special if statement is
-            //because 1 needs to be mapped
-            //to (255,255,255) in RGB
-            gfx_color(255,255,255);
-        } else if (memVal > 0){
-            //this is to convert between
-            //a memVal between 0-255 and
-            //three 0-255 vals representing R,G,B
-            //red is the first 3 bits
-            uint8_t red = memVal & 0xE0;
-            //blue is the next 3 bits
-            uint8_t blue = (memVal << 3) & 0xE0;
-            //green is the last 2
-            uint8_t green = (memVal << 6) & 0xE0;
-            gfx_color(red,blue,green);
-        } else {
-            gfx_color(0,0,0);
-        }
-        drawPoint(x,y);
-        x++;
-        if(x == 32){
-            x = 0;
-            y++;
-        }
-    }
-    gfx_flush();
-}
-
-void getKeyboardInput(CPU *c){
-    //reads keyboard input and
-    //sets memory location $ff
-    //to match keyboard input
-    int dir = getDirection();
-    switch(dir){
-        case 0:
-            //printf("left");
-            c->addressSpace[0xff] = 0x61;
-            break;
-        case 1:
-            //printf("right");
-            c->addressSpace[0xff] = 0x64;
-            break;
-        case 2:
-            //printf("up");
-            c->addressSpace[0xff] = 0x77;
-            break;
-        case 3:
-            //printf("down");
-            c->addressSpace[0xff] = 0x73;
-            break;
-    }
-}
-
-void getRandomVal(CPU *c){
-    //loads a random byte into $FE of
-    //the cpu's memory (this is specifically
-    //to get the snake game implementation
-    //working and is NOT something the 6502
-    //actually ever does
-    uint8_t randNum = rand();
-    c->addressSpace[0xfe] = randNum;
-}
-
-void initializerng(){
-    //initialize random number generator
-    srand(time(NULL));
-}
-
-/* RUN PROGRAM IN MEMORY */
-void run_ops(CPU *c, int16_t end) {
-    initializegfx();
-    initializerng();
-    char k;
-    //TODO: line below for debugging only, remove when done
-    c->addressSpace[0xFF] = 0x64; //set direction key to be right
-    while (c->PC < end){
-        getKeyboardInput(c);
-        getRandomVal(c);
-        run_op(c);
-        visualizeMemory(c);
-        //print(c);
-        //printAddressSpace(c,0x400,0x420);
-    }
-}
-
 void run_op(CPU *c){
     //runs a single operation based on whatever
     //is loaded into CPU memory, changing
@@ -459,7 +329,13 @@ void run_op(CPU *c){
             }
             break;
         case modeZeroPageY:
-            assert(0);
+            {
+                address = 0x00FF & c->addressSpace[c->PC + 1];
+                int8_t yVal = getRegByte(c,IND_Y);
+                address += yVal;
+                operand = c->addressSpace[address];
+                o = getOP_CODE_INFO(operand, address, mode);
+            }
             break;
     }
     c->PC += instructionSizes[opCode];
