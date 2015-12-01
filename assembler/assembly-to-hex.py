@@ -6,6 +6,7 @@ import sys
 
 # for negative hex values
 def toHex(val, nbits):
+    print("hexvalue", hex((val + (1 << nbits)) % (1 << nbits)))
     return hex((val + (1 << nbits)) % (1 << nbits))
 
 def stripCommentsAndWhitespace(line):
@@ -25,7 +26,7 @@ def getLineDict(line):
     #print("Arguments", splitLine)
     return {'data':splitLine,'length':arguments}
 
-def findAndReplaceLabelsAndVariables(lineDict,labels,variables):
+def findLabelsAndVariables(lineDict,labels,variables):
     #adds things to labels dictionary based on lineDict
     bytePosition = lineDict['bytePosition']
     arguments = lineDict['length']
@@ -104,10 +105,16 @@ def parseLines(f):
             #print(stripped)
             lineDict = getLineDict(stripped)
             lineDict['bytePosition'] = bytePosition
-            findAndReplaceLabelsAndVariables(lineDict,labels,variables)
+            findLabelsAndVariables(lineDict,labels,variables)
             parsedLines.append(lineDict)
             bytePosition += getByteSize(lineDict)
     return parsedLines, labels, variables
+
+def padHex(s):
+    if (len(s) == 1):
+        return "0" + s
+    else:
+        return s
 
 def getHexFromLines(parsedLines,labels,variables):
     print("Labels:", labels)
@@ -138,8 +145,12 @@ def getHexFromLines(parsedLines,labels,variables):
                     elif (line['length'] == 2):
                         # immediate
                         if(address.startswith('#')):
-                            print(opcodes[opcode]['IMM'] + ' ' + address[2:] + ' ')
-                            hexOutput += opcodes[opcode]['IMM'] + ' ' + address[2:] + ' '
+                            if(address[1] == '$'):
+                                print(opcodes[opcode]['IMM'] + ' ' + padHex(address[2:]) + ' ')
+                                hexOutput += opcodes[opcode]['IMM'] + ' ' + padHex(address[2:]) + ' '
+                            else:
+                                print(opcodes[opcode]['IMM'] + ' ' + padHex(address[1:]) + ' ')
+                                hexOutput += opcodes[opcode]['IMM'] + ' ' + padHex(address[1:]) + ' '
                         elif (address.startswith('(')):
                             # indexed indirect
                             if address[4] == ',':
@@ -162,8 +173,8 @@ def getHexFromLines(parsedLines,labels,variables):
                                 hexOutput += opcodes[opcode][mode] + ' ' + address[3:5] + ' ' + address[1:3] + ' '
                             # zero page
                             elif (operandLength == 3):
-                                print(opcodes[opcode]['ZP'] + ' ' + address[1:] + ' ')
-                                hexOutput += opcodes[opcode]['ZP'] + ' ' + address[1:] + ' '
+                                print(opcodes[opcode]['ZP'] + ' ' + padHex(address[1:]) + ' ')
+                                hexOutput += opcodes[opcode]['ZP'] + ' ' + padHex(address[1:]) + ' '
                             # zero page X and Y
                             elif (address[3] == ','):
                                 mode = 'ZP' + address[4].upper()
@@ -171,20 +182,20 @@ def getHexFromLines(parsedLines,labels,variables):
                                 hexOutput += opcodes[opcode][mode] + ' ' + address[1:3] + ' '
                             # absolute
                             else:
-                                print(opcodes[opcode]['ABS'] + ' ' + address[3:] + ' ' + address[1:3] + ' ')
-                                hexOutput += opcodes[opcode]['ABS'] + ' ' + address[3:] + ' ' + address[1:3] + ' '
+                                print(opcodes[opcode]['ABS'] + ' ' + padHex(address[3:]) + ' ' + address[1:3] + ' ')
+                                hexOutput += opcodes[opcode]['ABS'] + ' ' + padHex(address[3:]) + ' ' + address[1:3] + ' '
                         elif (address in labels.keys()):
                             # print ("we\'ve got a label")
                             if (opcode[0] == "J"):
                                 # Jump to an absolute point (this doesn't account for indirect jumps)
                                 byteDiff = labels[address] - line['bytePosition'] - 2
-                                print(opcodes[opcode]['ABS'] + ' ' + toHex(byteDiff, 8)[2:] + ' ' )
-                                hexOutput += opcodes[opcode]['ABS'] + ' ' + toHex(byteDiff, 8)[2:] + ' ' 
+                                print(opcodes[opcode]['ABS'] + ' ' + padHex(str(toHex(byteDiff, 16)[2:])) + ' 06 ' )
+                                hexOutput += opcodes[opcode]['ABS'] + ' ' + padHex(str(toHex(byteDiff, 16)[2:])) + ' 06 ' 
                             else:
                             # relative addressing with label
-                                print(opcodes[opcode]['BRA'] + ' ' + toHex(byteDiff, 8)[2:] + ' ')
                                 byteDiff = labels[address] - line['bytePosition'] - 2
-                                hexOutput += opcodes[opcode]['BRA'] + ' ' + toHex(byteDiff, 8)[2:] + ' '
+                                print(opcodes[opcode]['BRA'] + ' ' + padHex(str(toHex(byteDiff, 8)[2:])) + ' ')
+                                hexOutput += opcodes[opcode]['BRA'] + ' ' + padHex(str(toHex(byteDiff, 8)[2:])) + ' '
                         else:
                             raise ValueError('Problem with address in this line: ',line)
                     else:
