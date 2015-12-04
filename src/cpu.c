@@ -826,13 +826,13 @@ void rti(CPU *c, OP_CODE_INFO *o){
 
 void rol(CPU *c, OP_CODE_INFO *o){
     uint8_t src = (o->operand) << 1;
-    if (getFlag(c,CARRY)) {
+    if (getFlag(c,C)) {
         src |= 0x1;
     }
-    setCarry(src > 0xFF);
+    setFlag(c,C,src > 0xFF);
     src &= 0xFF;
-    SET_SIGN(src);
-    SET_ZERO(src);
+    setSign(c,src);
+    setZero(c,src);
     if(o->mode == modeAccumulator){
         setRegByte(c,ACCUM,src);
     } else {
@@ -842,13 +842,13 @@ void rol(CPU *c, OP_CODE_INFO *o){
 
 void ror(CPU *c, OP_CODE_INFO *o){
     uint8_t src = o->operand;
-    if (getFlag(c,CARRY)) {
+    if (getFlag(c,C)) {
         src |= 0x100;
     }
-    setCarry(src & 0x01);
+    setFlag(c,C,src & 0x01);
     src >>= 1;
-    SET_SIGN(src);
-    SET_ZERO(src);
+    setSign(c,src);
+    setZero(c,src);
     if(o->mode == modeAccumulator){
         setRegByte(c,ACCUM,src);
     } else {

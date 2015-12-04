@@ -968,6 +968,18 @@ static char * RTS1() {
     return 0;
 }
 
+static char * EOR1() {
+    CPU *c = getCPU();
+    c->PC = 0xCFEE;
+    setRegByte(c,ACCUM,0x3F);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0x3F,0,modeImmediate);
+    eor(c,o);
+    mu_assert("EOR1 err, ACCUM != 0x00", getRegByte(c,ACCUM) == 0x00);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
 static char * all_tests() {
     mu_run_test(ADC1);
     mu_run_test(ADC2);
@@ -1028,6 +1040,7 @@ static char * all_tests() {
     mu_run_test(TXA1);
     mu_run_test(STA1);
     mu_run_test(STX1);
+    mu_run_test(EOR1);
     return 0;
 }
 

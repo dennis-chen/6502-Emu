@@ -133,7 +133,6 @@ char *byte_to_binary(int x);
 void run_ops(CPU *c, int16_t end);
 void run_op(CPU *c);
 
-//unimplemented functions
 void eor(CPU *c, OP_CODE_INFO *o);
 void rol(CPU *c, OP_CODE_INFO *o);
 void ror(CPU *c, OP_CODE_INFO *o);
