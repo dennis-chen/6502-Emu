@@ -806,43 +806,72 @@ void tax(CPU *c, OP_CODE_INFO *o){
 }
 
 void eor(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    int8_t accumVal = getRegByte(c,ACCUM);
+    int8_t newVal = accumVal ^ o->operand;
+    setRegByte(c,ACCUM,newVal);
+    setSign(c,newVal);
+    setZero(c,newVal);
 }
 
 void rti(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    uint8_t status = PULL(c);
+    setRegByte(c,STATUS,status);
+    uint8_t lowerByte = PULL(c);
+    uint8_t upperByte = PULL(c);
+    //add 1 to address before we jump PC to it
+    //in order to resume program at correct place
+    uint16_t address = ((upperByte << 8) | lowerByte);
+    c->PC = address;
 }
 
 void rol(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    uint8_t src = (o->operand) << 1;
+    if (getFlag(c,CARRY)) {
+        src |= 0x1;
+    }
+    setCarry(src > 0xFF);
+    src &= 0xFF;
+    SET_SIGN(src);
+    SET_ZERO(src);
+    if(o->mode == modeAccumulator){
+        setRegByte(c,ACCUM,src);
+    } else {
+        write(c,o->address,src);
+    }
 }
 
 void ror(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    uint8_t src = o->operand;
+    if (getFlag(c,CARRY)) {
+        src |= 0x100;
+    }
+    setCarry(src & 0x01);
+    src >>= 1;
+    SET_SIGN(src);
+    SET_ZERO(src);
+    if(o->mode == modeAccumulator){
+        setRegByte(c,ACCUM,src);
+    } else {
+        write(c,o->address,src);
+    }
 }
 
 void sei(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    setFlag(c,I,1);
 }
 
 void txs(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    int8_t src = getRegByte(c,IND_X);
+    setRegByte(c,STACK,src);
 }
 
 void tsx(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    int8_t src = getRegByte(c,STACK);
+    setRegByte(c,IND_X,src);
 }
 
 void sed(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    setFlag(c,D,1);
 }
 
 //from https://github.com/fogleman/nes/blob/master/nes/cpu.go
