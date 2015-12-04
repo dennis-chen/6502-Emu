@@ -23,7 +23,7 @@ int8_t getRegBit(CPU *c, REG name, int8_t bit){
 CPU * getCPU(){
     CPU *c = malloc(sizeof(CPU));
     //programs start at 0x600 in memory
-    c->PC = 0x600;
+    c->PC = 0;
     //initialize 8 bit registers
     int NUM_REG = 5;
     int8_t *r = calloc(NUM_REG,sizeof(int8_t));

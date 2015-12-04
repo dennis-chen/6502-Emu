@@ -114,10 +114,12 @@ void runSnake(CPU *c, int16_t end) {
 }
 
 int main() {
+    uint16_t programStart = 0x0600;
     CPU *c = getCPU();
+    c->PC = programStart;
     int argc = 2;
     char *argv[2] = {"./runSnake", "../hexdump/snake"};
-    int16_t end = load_program(argc, argv, c->addressSpace, 0x0600);
+    int16_t end = load_program(argc, argv, c->addressSpace, programStart);
     printf("Focus in this terminal and press W,A,S,D to move the snake. Collect the apples and avoid colliding with the wall or yourself. Good luck!\n");
     runSnake(c, end);
     printf("\nSorry, you lose!\n");
