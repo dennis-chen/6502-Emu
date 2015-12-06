@@ -805,6 +805,7 @@ void tax(CPU *c, OP_CODE_INFO *o){
     setRegByte(c,IND_X,accumVal);
 }
 
+// Exclusive OR memory with accumulator
 void eor(CPU *c, OP_CODE_INFO *o){
     int8_t accumVal = getRegByte(c,ACCUM);
     int8_t newVal = accumVal ^ o->operand;
@@ -813,6 +814,7 @@ void eor(CPU *c, OP_CODE_INFO *o){
     setZero(c,newVal);
 }
 
+// Return from interrupt
 void rti(CPU *c, OP_CODE_INFO *o){
     uint8_t status = PULL(c);
     setRegByte(c,STATUS,status);
@@ -824,6 +826,7 @@ void rti(CPU *c, OP_CODE_INFO *o){
     c->PC = address;
 }
 
+// Rotate one bit left
 void rol(CPU *c, OP_CODE_INFO *o){
     uint8_t src = (o->operand) << 1;
     if (getFlag(c,C)) {
@@ -840,6 +843,7 @@ void rol(CPU *c, OP_CODE_INFO *o){
     }
 }
 
+// Rotate one bit right
 void ror(CPU *c, OP_CODE_INFO *o){
     uint8_t src = o->operand;
     if (getFlag(c,C)) {
@@ -856,20 +860,24 @@ void ror(CPU *c, OP_CODE_INFO *o){
     }
 }
 
+// Set interrupt disable status
 void sei(CPU *c, OP_CODE_INFO *o){
     setFlag(c,I,1);
 }
 
+// Transfer index X to stack pointer
 void txs(CPU *c, OP_CODE_INFO *o){
     int8_t src = getRegByte(c,IND_X);
     setRegByte(c,STACK,src);
 }
 
+// Transfer stack pointer to index X
 void tsx(CPU *c, OP_CODE_INFO *o){
     int8_t src = getRegByte(c,STACK);
     setRegByte(c,IND_X,src);
 }
 
+// Set decimal mode
 void sed(CPU *c, OP_CODE_INFO *o){
     setFlag(c,D,1);
 }
