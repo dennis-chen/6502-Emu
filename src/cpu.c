@@ -23,7 +23,7 @@ int8_t getRegBit(CPU *c, REG name, int8_t bit){
 CPU * getCPU(){
     CPU *c = malloc(sizeof(CPU));
     //programs start at 0x600 in memory
-    c->PC = 0x600;
+    c->PC = 0;
     //initialize 8 bit registers
     int NUM_REG = 5;
     int8_t *r = calloc(NUM_REG,sizeof(int8_t));
@@ -805,44 +805,79 @@ void tax(CPU *c, OP_CODE_INFO *o){
     setRegByte(c,IND_X,accumVal);
 }
 
+// Exclusive OR memory with accumulator
 void eor(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    int8_t accumVal = getRegByte(c,ACCUM);
+    int8_t newVal = accumVal ^ o->operand;
+    setRegByte(c,ACCUM,newVal);
+    setSign(c,newVal);
+    setZero(c,newVal);
 }
 
+// Return from interrupt
 void rti(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    uint8_t status = PULL(c);
+    setRegByte(c,STATUS,status);
+    uint8_t lowerByte = PULL(c);
+    uint8_t upperByte = PULL(c);
+    uint16_t address = ((upperByte << 8) | lowerByte);
+    c->PC = address;
 }
 
+// Rotate one bit left
 void rol(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    uint16_t src = (o->operand) << 1;
+    if (getFlag(c,C)) {
+        src |= 0x1;
+    }
+    setFlag(c,C,src > 0xFF);
+    src &= 0xFF;
+    setSign(c,src);
+    setZero(c,src);
+    if(o->mode == modeAccumulator){
+        setRegByte(c,ACCUM,src);
+    } else {
+        write(c,o->address,src);
+    }
 }
 
+// Rotate one bit right
 void ror(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    uint8_t src = o->operand;
+    if (getFlag(c,C)) {
+        src |= 0x100;
+    }
+    setFlag(c,C,src & 0x01);
+    src >>= 1;
+    setSign(c,src);
+    setZero(c,src);
+    if(o->mode == modeAccumulator){
+        setRegByte(c,ACCUM,src);
+    } else {
+        write(c,o->address,src);
+    }
 }
 
+// Set interrupt disable status
 void sei(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    setFlag(c,I,1);
 }
 
+// Transfer index X to stack pointer
 void txs(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    int8_t src = getRegByte(c,IND_X);
+    setRegByte(c,STACK,src);
 }
 
+// Transfer stack pointer to index X
 void tsx(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    int8_t src = getRegByte(c,STACK);
+    setRegByte(c,IND_X,src);
 }
 
+// Set decimal mode
 void sed(CPU *c, OP_CODE_INFO *o){
-    printf("Called unimplemented function!");
-    assert(0);
+    setFlag(c,D,1);
 }
 
 //from https://github.com/fogleman/nes/blob/master/nes/cpu.go
