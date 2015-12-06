@@ -820,8 +820,6 @@ void rti(CPU *c, OP_CODE_INFO *o){
     setRegByte(c,STATUS,status);
     uint8_t lowerByte = PULL(c);
     uint8_t upperByte = PULL(c);
-    //add 1 to address before we jump PC to it
-    //in order to resume program at correct place
     uint16_t address = ((upperByte << 8) | lowerByte);
     c->PC = address;
 }

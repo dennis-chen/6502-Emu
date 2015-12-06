@@ -974,7 +974,9 @@ static char * EOR1() {
     setRegByte(c,ACCUM,0x3F);
     OP_CODE_INFO *o = getOP_CODE_INFO(0x3F,0,modeImmediate);
     eor(c,o);
-    mu_assert("EOR1 err, ACCUM != 0x00", getRegByte(c,ACCUM) == 0x00);
+    mu_assert("EOR1 err, ACCUM != 0x00", (0xFF & getRegByte(c,ACCUM)) == 0x00);
+    mu_assert("EOR1 err, SIGN != 0", getFlag(c, S) == 0);
+    mu_assert("EOR1 err, ZERO != 1", getFlag(c, Z) == 1);
     freeOP_CODE_INFO(o);
     free(c);
     return 0;
@@ -984,9 +986,73 @@ static char * EOR2() {
     CPU *c = getCPU();
     c->PC = 0xCFEE;
     setRegByte(c,ACCUM,0x3F);
-    OP_CODE_INFO *o = getOP_CODE_INFO(0x3F,0,modeImmediate);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0xFF,0,modeImmediate);
     eor(c,o);
-    mu_assert("EOR1 err, ACCUM != 0x00", getRegByte(c,ACCUM) == 0x00);
+    mu_assert("EOR2 err, ACCUM != 0xC0", (0xFF & getRegByte(c,ACCUM)) == 0xc0);
+    mu_assert("EOR2 err, SIGN != 1", getFlag(c, S) == 1);
+    mu_assert("EOR2 err, ZERO != 0", getFlag(c, Z) == 0);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * EOR3() {
+    CPU *c = getCPU();
+    c->PC = 0xCFEE;
+    setRegByte(c,ACCUM,0x8A);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0x92,0,modeImmediate);
+    eor(c,o);
+    mu_assert("EOR2 err, ACCUM != 0x18", (0xFF & getRegByte(c,ACCUM)) == 0x18);
+    mu_assert("EOR2 err, SIGN != 0", getFlag(c, S) == 0);
+    mu_assert("EOR2 err, ZERO != 0", getFlag(c, Z) == 0);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * RTI1() {
+    CPU *c = getCPU();
+    c->PC = 0x6EFC;
+    setRegByte(c, STACK, 0x2);
+    c->addressSpace[0x103] = 0x4;
+    c->addressSpace[0x104] = 0x00;
+    c->addressSpace[0x105] = 0x06;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0, 0, modeImplied);
+    rti(c,o);
+    mu_assert("RTI1 err, PC != 0x600", c->PC == 0x600);
+    mu_assert("RTI1 err, STATUS != 0x4", getRegByte(c,STATUS) == 0x4);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * RTI2() {
+    CPU *c = getCPU();
+    c->PC = 0xCE66;
+    setRegByte(c, STACK, 0x2);
+    c->addressSpace[0x103] = 0x3;
+    c->addressSpace[0x104] = 0x66;
+    c->addressSpace[0x105] = 0x60;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0, 0, modeImplied);
+    rti(c,o);
+    mu_assert("RTI2 err, PC != 0x6066", c->PC == 0x6066);
+    mu_assert("RTI2 err, STATUS != 0x3", getRegByte(c,STATUS) == 0x3);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * RTI3() {
+    CPU *c = getCPU();
+    c->PC = 0xCE66;
+    setRegByte(c, STACK, 0xF0);
+    c->addressSpace[0x1F1] = 0xf;
+    c->addressSpace[0x1F2] = 0xff;
+    c->addressSpace[0x1F3] = 0xff;
+    OP_CODE_INFO *o = getOP_CODE_INFO(0, 0, modeImplied);
+    rti(c,o);
+    mu_assert("RTI3 err, PC != 0x6066", c->PC == 0xFFFF);
+    mu_assert("RTI3 err, STATUS != 0x3", getRegByte(c,STATUS) == 0xF);
     freeOP_CODE_INFO(o);
     free(c);
     return 0;
@@ -1053,6 +1119,11 @@ static char * all_tests() {
     mu_run_test(STA1);
     mu_run_test(STX1);
     mu_run_test(EOR1);
+    mu_run_test(EOR2);
+    mu_run_test(EOR3);
+    mu_run_test(RTI1);
+    mu_run_test(RTI2);
+    mu_run_test(RTI3);
     return 0;
 }
 
