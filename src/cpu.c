@@ -826,7 +826,7 @@ void rti(CPU *c, OP_CODE_INFO *o){
 
 // Rotate one bit left
 void rol(CPU *c, OP_CODE_INFO *o){
-    uint8_t src = (o->operand) << 1;
+    uint16_t src = (o->operand) << 1;
     if (getFlag(c,C)) {
         src |= 0x1;
     }

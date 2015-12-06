@@ -1058,6 +1058,18 @@ static char * RTI3() {
     return 0;
 }
 
+static char * ROL1() {
+    CPU *c = getCPU();
+    setRegByte(c, ACCUM, 0xA1);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0xA1, 0, modeAccumulator);
+    rol(c,o);
+    mu_assert("ROL1 err, ACCUM != 0x42", (0xFF & getRegByte(c,ACCUM)) == 0x42);
+    mu_assert("ROL1 err, CARRY != 1", getFlag(c,C) == 1);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
 static char * all_tests() {
     mu_run_test(ADC1);
     mu_run_test(ADC2);
@@ -1124,6 +1136,7 @@ static char * all_tests() {
     mu_run_test(RTI1);
     mu_run_test(RTI2);
     mu_run_test(RTI3);
+    mu_run_test(ROL1);
     return 0;
 }
 
