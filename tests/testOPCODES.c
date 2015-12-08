@@ -1070,6 +1070,56 @@ static char * ROL1() {
     return 0;
 }
 
+static char * ROL2() {
+    CPU *c = getCPU();
+    setRegByte(c, ACCUM, 0xA1);
+    OP_CODE_INFO *o1 = getOP_CODE_INFO(getRegByte(c,ACCUM) & 0xFF, 0, modeAccumulator);
+    rol(c,o1);
+    OP_CODE_INFO *o2 = getOP_CODE_INFO(getRegByte(c,ACCUM) & 0xFF, 0, modeAccumulator);
+    rol(c,o2);
+    mu_assert("ROL2 err, ACCUM != 0x85", (0xFF & getRegByte(c,ACCUM)) == 0x85);
+    mu_assert("ROL2 err, CARRY != 0", getFlag(c,C) == 0);
+    freeOP_CODE_INFO(o1);
+    freeOP_CODE_INFO(o2);
+    free(c);
+    return 0;
+}
+
+static char * ROR1() {
+    CPU *c = getCPU();
+    setRegByte(c, ACCUM, 0xA1);
+    OP_CODE_INFO *o = getOP_CODE_INFO(getRegByte(c,ACCUM) & 0xFF, 0, modeAccumulator);
+    ror(c,o);
+    mu_assert("ROR1 err, ACCUM != 0x50", (0xFF & getRegByte(c,ACCUM)) == 0x50);
+    mu_assert("ROR1 err, CARRY != 1", getFlag(c,C) == 1);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * ROR2() {
+    CPU *c = getCPU();
+    setRegByte(c, ACCUM, 0x50);
+    setFlag(c,C,1);
+    OP_CODE_INFO *o = getOP_CODE_INFO(getRegByte(c,ACCUM) & 0xFF, 0, modeAccumulator);
+    ror(c,o);
+    mu_assert("ROR2 err, ACCUM != 0xA8", (0xFF & getRegByte(c,ACCUM)) == 0xA8);
+    mu_assert("ROR2 err, CARRY != 0", getFlag(c,C) == 0);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * SEI1() {
+    CPU *c = getCPU();
+    OP_CODE_INFO *o = getOP_CODE_INFO(0, 0, modeImplied);
+    sei(c,o);
+    mu_assert("SEI1 err, INTERRUPT != 1", getFlag(c,I) == 1);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
 static char * all_tests() {
     mu_run_test(ADC1);
     mu_run_test(ADC2);
@@ -1137,6 +1187,9 @@ static char * all_tests() {
     mu_run_test(RTI2);
     mu_run_test(RTI3);
     mu_run_test(ROL1);
+    mu_run_test(ROL2);
+    mu_run_test(ROR1);
+    mu_run_test(SEI1);
     return 0;
 }
 

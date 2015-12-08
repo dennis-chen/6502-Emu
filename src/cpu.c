@@ -843,7 +843,7 @@ void rol(CPU *c, OP_CODE_INFO *o){
 
 // Rotate one bit right
 void ror(CPU *c, OP_CODE_INFO *o){
-    uint8_t src = o->operand;
+    uint16_t src = 0xFF & o->operand;
     if (getFlag(c,C)) {
         src |= 0x100;
     }
