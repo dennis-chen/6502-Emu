@@ -1120,6 +1120,38 @@ static char * SEI1() {
     return 0;
 }
 
+static char * TXS1() {
+    CPU *c = getCPU();
+    setRegByte(c,IND_X,0x99);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0, 0, modeImplied);
+    txs(c,o);
+    mu_assert("TXS1 err, STACK != 0x99", (getRegByte(c,STACK)&0xFF) == 0x99);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * TSX1() {
+    CPU *c = getCPU();
+    setRegByte(c,STACK,0x99);
+    OP_CODE_INFO *o = getOP_CODE_INFO(0, 0, modeImplied);
+    tsx(c,o);
+    mu_assert("TXS1 err, STACK != 0x99", (getRegByte(c,IND_X)&0xFF) == 0x99);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
+static char * SED1() {
+    CPU *c = getCPU();
+    OP_CODE_INFO *o = getOP_CODE_INFO(0, 0, modeImplied);
+    sed(c,o);
+    mu_assert("SED1 err, DEC != 1", getFlag(c,D) == 1);
+    freeOP_CODE_INFO(o);
+    free(c);
+    return 0;
+}
+
 static char * all_tests() {
     mu_run_test(ADC1);
     mu_run_test(ADC2);
@@ -1190,6 +1222,9 @@ static char * all_tests() {
     mu_run_test(ROL2);
     mu_run_test(ROR1);
     mu_run_test(SEI1);
+    mu_run_test(TXS1);
+    mu_run_test(TSX1);
+    mu_run_test(SED1);
     return 0;
 }
 
