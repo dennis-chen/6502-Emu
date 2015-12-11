@@ -104,7 +104,6 @@ void initializerng(){
 }
 
 void runSnake(CPU *c, int16_t end) {
-    initializegfx();
     initializerng();
     int counter = 0;
     while (c->PC < end){
@@ -116,6 +115,19 @@ void runSnake(CPU *c, int16_t end) {
     }
 }
 
+void countdown(){
+    int counter = 3;
+    int sleepTime = 1;
+    printf("Game starting in 3 seconds!\n");
+    sleep(sleepTime);
+    while(counter > 0){
+        printf("%d\n",counter);
+        sleep(sleepTime);
+        counter--;
+    }
+    printf("GO!\n");
+}
+
 int main() {
     uint16_t programStart = 0x0600;
     CPU *c = getCPU();
@@ -124,8 +136,11 @@ int main() {
     char *argv[2] = {"./runSnake", "../hexdump/snake"};
     int16_t end = load_program(argc, argv, c->addressSpace, programStart);
     printf("Focus in this terminal and press W,A,S,D to move the snake. Collect the apples and avoid colliding with the wall or yourself. Good luck!\n");
+    initializegfx();
+    countdown();
     runSnake(c, end);
-    printf("\nSorry, you lose!\n");
+    int finalScore = read(c,0x0003)/2-2;
+    printf("\nSorry, you lose! Your final score was %d\n!",finalScore);
     freeCPU(c);
     return 0;
 }
