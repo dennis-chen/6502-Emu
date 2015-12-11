@@ -36,3 +36,5 @@
 
 # Python files
 *.pyc
+
+./bin/*
