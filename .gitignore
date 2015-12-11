@@ -37,4 +37,5 @@
 # Python files
 *.pyc
 
-./bin/*
+# Binary and object files
+bin

@@ -5,16 +5,19 @@
 #include "../src/cpu.h"
 #include "../src/load_prog.h"
 
+int PIXEL_SIZE = 20;
+int SCREEN_SIZE = 32;
+
 void drawPoint(int x, int y){
     //draws point onto 'pixel' (actually a 8 by 8 square)
-    int cornerX = x * 8;
-    int cornerY = y * 8;
-    gfx_rectangle(cornerX,cornerY,8,8);
+    int cornerX = x * PIXEL_SIZE;
+    int cornerY = y * PIXEL_SIZE;
+    gfx_rectangle(cornerX,cornerY,PIXEL_SIZE,PIXEL_SIZE);
 }
 
 void initializegfx(){
-    int ysize = 256;
-    int xsize = 256;
+    int ysize = SCREEN_SIZE*PIXEL_SIZE;
+    int xsize = SCREEN_SIZE*PIXEL_SIZE;
     gfx_open(xsize,ysize,"Snake");
     gfx_color(255,255,255);
     return;
@@ -23,7 +26,7 @@ void initializegfx(){
 void visualizeMemory(CPU *c){
     //visualizes memory addresses $0200 to $05ff
     //(32 by 32 bytes)
-    //as a 256 by 256 pixel square
+    //as a SCREEN_SIZE*PIXEL_SIZE by SCREEN_SIZE*PIXEL_SIZE pixel square
     gfx_clear();
     int x = 0;
     int y = 0;
