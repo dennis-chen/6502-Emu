@@ -1,5 +1,6 @@
 #!/bin/sh
 
+mkdir bin
 cd ./tools
 make all
 cd ../bin
